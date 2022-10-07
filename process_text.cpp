@@ -27,11 +27,13 @@ static int _Lines_initialize    (Text_info *text);
 
 FILE *fp_logs = nullptr;
 
-int Text_read (int fdin, Text_info *text){
+int Text_read (int fdin, Text_info *text)
+{
     assert (fdin >= 0 && "fdin is negative number");
     assert (text != nullptr && "struct Text_info is nullptr");
 
     fp_logs = fopen ("logs_info.txt", "a");
+
     if (fp_logs == nullptr)
         return OPEN_FILE_LOG_ERR;
     
@@ -52,7 +54,8 @@ int Text_read (int fdin, Text_info *text){
     return 0;
 }
 
-static int _Work_with_bufer (int fdin, Text_info *text){
+static int _Work_with_bufer (int fdin, Text_info *text)
+{
     assert (fdin >= 0 && "fdin is negative number");
     assert (text != nullptr && "struct Text_info is nullptr");
     
@@ -69,7 +72,8 @@ static int _Work_with_bufer (int fdin, Text_info *text){
     return 0;
 }
 
-static int _Read_file_to_buffer (int fdin, Text_info *text){
+static int _Read_file_to_buffer (int fdin, Text_info *text)
+{
     assert (fdin >= 0 && "fdin is negative number");
     assert (text != nullptr && "struct Text_info is nullptr");
 
@@ -79,14 +83,17 @@ static int _Read_file_to_buffer (int fdin, Text_info *text){
         Log_report ("File read error");
         return ERR_FILE_READING;
     }
-   
+
     if (*(text->text_buf + real_read_char - 1) != '\n')                               
         *(text->text_buf + real_read_char) = '\n';   
+
+    *(text->text_buf + real_read_char + 1) = '\0';
 
     return 0;
 }
 
-static int _Create_buffer (int fdin, Text_info *text){
+static int _Create_buffer (int fdin, Text_info *text)
+{
     assert (fdin >= 0 && "fdin is negative number");
 
     text->text_size = _Get_file_size (fdin) + 1;
@@ -104,7 +111,8 @@ static int _Create_buffer (int fdin, Text_info *text){
     return 0;
 } 
 
-static long _Get_file_size (int fdin){
+static long _Get_file_size (int fdin)
+{
     assert (fdin >= 0 && "fdin is negative number");
 
     struct stat file_info = {};
@@ -113,14 +121,16 @@ static long _Get_file_size (int fdin){
     return file_info.st_size;
 }
 
-static int _Read_to_buffer (int fdin, char *buf, long text_size){
+static int _Read_to_buffer (int fdin, char *buf, long text_size)
+{
     assert (fdin >= 0 && "fdin is negative number");
     assert (buf  != nullptr && "Buffer is nullptr");
     
     return read (fdin, buf, text_size);
 }
 
-static int _Get_count_lines (const char *buf){
+static int _Get_count_lines (const char *buf)
+{
     assert (buf != nullptr && "buffer is nullptr");
     
     const char* buffer = buf;
@@ -136,7 +146,8 @@ static int _Get_count_lines (const char *buf){
     return counter;
 }
 
-static int _Lines_initialize (Text_info *text){
+static int _Lines_initialize (Text_info *text)
+{
     assert (text != nullptr && "Text info is nullptr");
 
     text->lines = (Line*) calloc (text->cnt_lines, sizeof (Line));
@@ -164,7 +175,8 @@ static int _Lines_initialize (Text_info *text){
     return 0;
 }
 
-int Free_buffer (Text_info *text){
+int Free_buffer (Text_info *text)
+{
     assert (text != nullptr && "Text_info text is nullptr");
 
     if (text->text_buf == nullptr){
@@ -188,7 +200,8 @@ int Free_buffer (Text_info *text){
     return 0;
 }
 
-int Text_write (FILE *fpout, int cnt_lines, Line *lines){
+int Text_write (FILE *fpout, int cnt_lines, Line *lines)
+{
     assert (fpout != nullptr && "file fpout is nullptr");
 
     for (int cur_line = 0; cur_line < cnt_lines; cur_line++){
