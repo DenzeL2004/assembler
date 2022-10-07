@@ -2,10 +2,16 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <io.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "process_text.h"
 #include "../Generals_func/generals.h"
 #include "../Logs/log_errors.h"
+
+#include "assembler_config.h"
 #include "assembler.h"
 
 #define Get_convert_command(commands_line, code)                    \
@@ -14,13 +20,64 @@
 static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_logs);
 
 
-#define Write_convert_file(code, file_info)                    \
-            Write_convert_file_ (code, file_info, fp_logs)
+#define Write_convert_file(file_info)                    \
+            Write_convert_file_ (file_info, fp_logs)
 
-static int Write_convert_file_ (int *code, File_info *file_info, FILE *fp_logs);
+static int Write_convert_file_ (File_info *file_info, FILE *fp_logs);
+
+static int File_info_ctor (File_info *file_info);
+
+#define File_info_dtor(file_info)                    \
+            File_info_dtor_ (file_info, fp_logs)
+
+static int File_info_dtor_ (File_info *file_info, FILE *fp_logs);
+
+static int File_info_ctor (File_info *file_info)
+{
+    assert (file_info != nullptr && "file info is nullptr");
+
+    file_info->code = nullptr;
+
+    file_info->sig     = SIG;
+    file_info->ver     = VER;
+
+    file_info->cnt_com = 0;
+
+    return 0;
+}
+
+static int File_info_dtor_ (File_info *file_info, FILE *fp_logs)
+{
+    assert (file_info != nullptr && "file info is nullptr");
+
+    if (file_info->code == nullptr)
+    {
+        Log_report ("Memory has not been allocated yet\n");
+        return 0;
+    }
+
+    if (file_info->code == (int*) POISON_PTR)
+    {
+        Log_report ("Memory has been freed\n");
+        return 0;
+    }
+
+    free (file_info->code);
+
+    file_info->code = (int*) POISON_PTR;
+
+    file_info->sig     = POISON_PTR;
+    file_info->ver     = POISON_PTR;
+
+    file_info->cnt_com = -1;
+
+    return 0;
+}
 
 int Convert_operations (int fdin)
 {
+    assert (fdin >= 0 && "descriptor on file is negative number");
+
     #ifdef USE_LOG
         
         FILE *fp_logs = Open_logs_file ();
@@ -44,31 +101,29 @@ int Convert_operations (int fdin)
         return EMPTY_FILE_ERR;
     }
 
-    int *code = (int*) calloc (commands_line.cnt_lines, sizeof (int));
+    File_info output_file_info = {};
+    File_info_ctor (&output_file_info);
+
+    output_file_info.code = (int*) calloc (commands_line.cnt_lines, sizeof (int));
     
-    if (code == nullptr)
+    if (output_file_info.code == nullptr)
     {
         Log_report ("Memory was not allocated for the array of commands\n");
         return ERR_MEMORY_ALLOC;
     }
 
-    printf ("OFF\n");
+    output_file_info.cnt_com = Get_convert_command (&commands_line, output_file_info.code);
 
-    int cnt_com = Get_convert_command (&commands_line, code);
-
-    if (cnt_com <= 0)
+    if (output_file_info.cnt_com <= 0)
     {
         Log_report ("The file was not converted because an unknown"
                     "command was encountered in the source file\n");
         return UNKNOWN_COM_ERR;
     }
-
-    File_info file_info = {};
-    file_info.cnt_com = cnt_com;
-    file_info.sig     = "DK";
-    file_info.ver     = "1.0"; 
     
-    Write_convert_file (code, &file_info);
+    Write_convert_file (&output_file_info);
+
+    File_info_dtor (&output_file_info);
 
     Free_buffer (&commands_line);
     
@@ -92,19 +147,19 @@ static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_l
     {
         char *cur_line = commands_line->lines[id_line].str;
 
-        char cmd[1000];
+        char cmd[MAXBUF];
         int read_ch = 0;
 
         sscanf (cur_line, "%s %n", cmd, &read_ch);
 
-        if (cmd[0] == '\n')
+        if (cmd[0] == '\0')
         {
             continue;
         }
         
-        else if (strcmpi (cmd, "add") == 0)
+        else if (strcmpi (cmd, "push") == 0)
         {
-            code[ip_com++] = CMD_ADD;
+            code[ip_com++] = CMD_PUSH;
 
             int val = 0;
             sscanf (cur_line + read_ch, "%d", &val);
@@ -112,9 +167,9 @@ static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_l
             code[ip_com++] = val;
         }
         
-        else if (strcmpi (cmd, "sum") == 0)
+        else if (strcmpi (cmd, "add") == 0)
         {
-            code[ip_com++] = CMD_SUM;
+            code[ip_com++] = CMD_ADD;
         }
         
         else if (strcmpi (cmd, "sub") == 0)
@@ -124,7 +179,7 @@ static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_l
         
         else if (strcmpi (cmd, "mult") == 0)
         {
-            code[ip_com++] = CMD_MULT;
+            code[ip_com++] = CMD_MUT;
         }
         
         else if (strcmpi (cmd, "div") == 0)
@@ -147,46 +202,31 @@ static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_l
             Log_report ("Unknown program entered\n");
             return UNKNOWN_COM_ERR;
         }
+    
+        cmd[0] = '\0';
     }
 
     return ip_com;
 }
 
-static int Write_convert_file_ (int *code, File_info *file_info, FILE *fp_logs)
+static int Write_convert_file_ (File_info *file_info, FILE *fp_logs)
 {
-    int fdout = creat ("convert_input.txt", O_WRONLY);
+    assert (file_info != nullptr && "File info is nullptr");
 
-    #ifdef BIN_REPRESENT
+    int fdout = creat ("convert_input.bin", S_IRWXU);
 
-        if (fdout < 0)
-        {
-            Log_report ("Converted file did't create");
-            return CREAT_CONVERT_FILE_ERR;
-        }
+    if (fdout < 0)
+    {
+        Log_report ("Descriptor converted file did't create\n");
+        return CREAT_CONVERT_FILE_ERR;
+    }
 
-        size_t size_file_info = sizeof (file_info);
-        write (fdout, file_info, size_file_info);
+    write (fdout, file_info->sig, sizeof (file_info->sig));
+    write (fdout, file_info->ver, sizeof (file_info->ver));  
 
-        write (fdout, code, sizeof (int) * file_info->cnt_com);
+    write (fdout, &file_info->cnt_com, sizeof(int));
 
-    #else
-
-        FILE *fpout = fdopen (fdout, "wt");
-
-        if (fpout == nullptr)
-        {
-            Log_report ("Converted file did't create");
-            return CREAT_CONVERT_FILE_ERR;
-        }
-
-        fprintf (fpout, "%s\n", file_info->sig);
-        fprintf (fpout, "%s\n", file_info->ver);
-        fprintf (fpout, "%d\n", file_info->cnt_com);
-
-        for (int id = 0; id < file_info->cnt_com; id++)
-            fprintf (fpout, "%d ", code[id]);
-    
-    #endif
+    write (fdout, file_info->code, sizeof (int) * file_info->cnt_com);
     
     if (close (fdout))
     {

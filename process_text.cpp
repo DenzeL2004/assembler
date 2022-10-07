@@ -31,7 +31,7 @@ int Text_read (int fdin, Text_info *text){
     assert (fdin >= 0 && "fdin is negative number");
     assert (text != nullptr && "struct Text_info is nullptr");
 
-    fp_logs = fopen ("logs_info.txt", "w");
+    fp_logs = fopen ("logs_info.txt", "a");
     if (fp_logs == nullptr)
         return OPEN_FILE_LOG_ERR;
     
