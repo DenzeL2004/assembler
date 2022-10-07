@@ -1,6 +1,8 @@
 #ifndef _ASSEMBLER_
 #define _ASSEMBLER_
 
+//#define BIN_REPRESENT
+
 enum Assembler_errors
 {
     CREAT_CONVERT_FILE_ERR = -1,

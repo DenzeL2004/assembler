@@ -6,25 +6,25 @@ FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equa
 		-Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel  	\
 		-Wtype-limits -Wwrite-strings -D_DEBUG -D_EJUDGE_CLIENT_SIDE
 
-build:  main.o stack.o generals.o log_errors.o assembler.o work_with_text.o
-	g++ obj/main.o obj/stack.o  obj/generals.o obj/log_errors.o obj/assembler.o obj/work_with_text.o -o ass
+build:  obj/main.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o
+	g++ obj/main.o obj/stack.o  obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o  -o assembler
 
-main.o: main.cpp
+obj/main.o: main.cpp
 	g++ main.cpp -c -o obj/main.o $(FLAGS)
 
-assembler.o: assembler.cpp
+obj/assembler.o: assembler.cpp
 	g++ assembler.cpp -c -o obj/assembler.o $(FLAGS)
 
-stack.o: D:\project\My_stack\stack.cpp
+obj/stack.o: D:\project\My_stack\stack.cpp
 	g++ D:\project\My_stack\stack.cpp -c -o obj/stack.o $(FLAGS)
 
-work_with_text.o: D:\project\Hamlet-\work_with_text.cpp
-	g++ D:\project\Hamlet-\work_with_text.cpp -c -o obj/work_with_text.o $(FLAGS)
+obj/process_text.o: process_text.cpp
+	g++ process_text.cpp -c -o obj/process_text.o $(FLAGS)
 
-log_errors.o: D:\project\Logs\log_errors.cpp
+obj/log_errors.o: D:\project\Logs\log_errors.cpp
 	g++ D:\project\Logs\log_errors.cpp -c -o obj/log_errors.o $(FLAGS)
 
-generals.o: D:\project\Generals_func\generals.cpp
+obj/generals.o: D:\project\Generals_func\generals.cpp
 	g++ D:\project\Generals_func\generals.cpp -c -o obj/generals.o $(FLAGS)
 
 .PHONY: cleanup mkdirectory

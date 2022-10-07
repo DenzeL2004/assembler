@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "../Hamlet-/include/work_with_text.h"
+#include "process_text.h"
 #include "../Generals_func/generals.h"
 #include "../Logs/log_errors.h"
 #include "assembler.h"
@@ -52,7 +52,10 @@ int Convert_operations (int fdin)
         return ERR_MEMORY_ALLOC;
     }
 
+    printf ("OFF\n");
+
     int cnt_com = Get_convert_command (&commands_line, code);
+
     if (cnt_com <= 0)
     {
         Log_report ("The file was not converted because an unknown"
@@ -89,8 +92,9 @@ static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_l
     {
         char *cur_line = commands_line->lines[id_line].str;
 
-        char *cmd = nullptr;
+        char cmd[1000];
         int read_ch = 0;
+
         sscanf (cur_line, "%s %n", cmd, &read_ch);
 
         if (cmd[0] == '\n')
@@ -152,22 +156,43 @@ static int Write_convert_file_ (int *code, File_info *file_info, FILE *fp_logs)
 {
     int fdout = creat ("convert_input.txt", O_WRONLY);
 
-    if (fdout < 0)
-    {
-        Log_report ("Converted file did't create");
-        return CREAT_CONVERT_FILE_ERR;
-    }
+    #ifdef BIN_REPRESENT
 
-    size_t size_file_info = sizeof (file_info);
-    write (fdout, file_info, size_file_info);
+        if (fdout < 0)
+        {
+            Log_report ("Converted file did't create");
+            return CREAT_CONVERT_FILE_ERR;
+        }
 
-    write (fdout, code, sizeof (int) * file_info->cnt_com);
+        size_t size_file_info = sizeof (file_info);
+        write (fdout, file_info, size_file_info);
 
+        write (fdout, code, sizeof (int) * file_info->cnt_com);
+
+    #else
+
+        FILE *fpout = fdopen (fdout, "wt");
+
+        if (fpout == nullptr)
+        {
+            Log_report ("Converted file did't create");
+            return CREAT_CONVERT_FILE_ERR;
+        }
+
+        fprintf (fpout, "%s\n", file_info->sig);
+        fprintf (fpout, "%s\n", file_info->ver);
+        fprintf (fpout, "%d\n", file_info->cnt_com);
+
+        for (int id = 0; id < file_info->cnt_com; id++)
+            fprintf (fpout, "%d ", code[id]);
+    
+    #endif
+    
     if (close (fdout))
     {
         Log_report ("Converted file did't close");
         return CREAT_CONVERT_FILE_ERR;
     }
-
+    
     return 0;
 }

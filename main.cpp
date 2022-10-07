@@ -5,9 +5,9 @@
 
 int main ()
 {
-    int fd = open ("input.txr", O_RDONLY, 0);
+    int fd = open ("input.txt", O_RDONLY, 0);
     
-    Convert_operations (fd);
+    Convert_operations (fd); 
 
     return 0;
 }
