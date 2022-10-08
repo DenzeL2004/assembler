@@ -11,28 +11,15 @@
 #include "../Generals_func/generals.h"
 #include "../Logs/log_errors.h"
 
-#include "assembler_config.h"
 #include "assembler.h"
 
-#define Get_convert_command(commands_line, code)                    \
-            Get_convert_command_ (commands_line, code, fp_logs)
+static FILE *fp_logs = stderr;
 
-static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_logs);
+static int Get_convert_command (Text_info *commands_line, int *code);
 
+static int Write_convert_file (File_info *file_info);
 
-#define Write_convert_file(file_info)                    \
-            Write_convert_file_ (file_info, fp_logs)
-
-static int Write_convert_file_ (File_info *file_info, FILE *fp_logs);
-
-static int File_info_ctor (File_info *file_info);
-
-#define File_info_dtor(file_info)                    \
-            File_info_dtor_ (file_info, fp_logs)
-
-static int File_info_dtor_ (File_info *file_info, FILE *fp_logs);
-
-static int File_info_ctor (File_info *file_info)
+int File_info_ctor (File_info *file_info)
 {
     assert (file_info != nullptr && "file info is nullptr");
 
@@ -46,7 +33,7 @@ static int File_info_ctor (File_info *file_info)
     return 0;
 }
 
-static int File_info_dtor_ (File_info *file_info, FILE *fp_logs)
+int File_info_dtor (File_info *file_info)
 {
     assert (file_info != nullptr && "file info is nullptr");
 
@@ -56,7 +43,7 @@ static int File_info_dtor_ (File_info *file_info, FILE *fp_logs)
         return 0;
     }
 
-    if (file_info->code == (int*) POISON_PTR)
+    if (file_info->code == (int*) POISON)
     {
         Log_report ("Memory has been freed\n");
         return 0;
@@ -64,10 +51,10 @@ static int File_info_dtor_ (File_info *file_info, FILE *fp_logs)
 
     free (file_info->code);
 
-    file_info->code = (int*) POISON_PTR;
+    file_info->code = (int*) POISON;
 
-    file_info->sig     = POISON_PTR;
-    file_info->ver     = POISON_PTR;
+    file_info->sig     = POISON;
+    file_info->ver     = POISON;
 
     file_info->cnt_com = -1;
 
@@ -80,9 +67,9 @@ int Convert_operations (int fdin)
 
     #ifdef USE_LOG
         
-        FILE *fp_logs = Open_logs_file ();
+        fp_logs = Open_logs_file ();
         
-        if (fp_logs == nullptr)
+        if (fp_logs == stderr)
             return OPEN_FILE_LOG_ERR;
 
     #endif 
@@ -137,7 +124,7 @@ int Convert_operations (int fdin)
     return 0;
 }
 
-static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_logs)
+static int Get_convert_command (Text_info *commands_line, int *code)
 {
     assert (commands_line != nullptr && "commands line is nullptr");
     assert (code != nullptr && "code is nullptr");
@@ -209,7 +196,7 @@ static int Get_convert_command_ (Text_info *commands_line, int *code, FILE *fp_l
     return ip_com;
 }
 
-static int Write_convert_file_ (File_info *file_info, FILE *fp_logs)
+static int Write_convert_file (File_info *file_info)
 {
     assert (file_info != nullptr && "File info is nullptr");
 

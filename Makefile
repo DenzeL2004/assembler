@@ -6,23 +6,26 @@ FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equa
 		-Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel  	\
 		-Wtype-limits -Wwrite-strings -D_DEBUG -D_EJUDGE_CLIENT_SIDE
 
-build:  obj/main.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o
-	g++ obj/main.o obj/stack.o  obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o  -o assembler
+build:  obj/main.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/proc.o
+	g++ obj/main.o obj/stack.o  obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/proc.o -o assembler
 
 obj/main.o: main.cpp
 	g++ main.cpp -c -o obj/main.o $(FLAGS)
 
-obj/assembler.o: assembler.cpp assembler.h
+obj/assembler.o: assembler.cpp assembler.h assembler_config.h
 	g++ assembler.cpp -c -o obj/assembler.o $(FLAGS)
 
-obj/stack.o: D:\project\My_stack\stack.cpp
-	g++ D:\project\My_stack\stack.cpp -c -o obj/stack.o $(FLAGS)
+obj/proc.o: proc.cpp proc.h
+	g++ proc.cpp -c -o obj/proc.o $(FLAGS)
 
 obj/process_text.o: process_text.cpp process_text.h
 	g++ process_text.cpp -c -o obj/process_text.o $(FLAGS)
 
 obj/log_errors.o: D:\project\Logs\log_errors.cpp
 	g++ D:\project\Logs\log_errors.cpp -c -o obj/log_errors.o $(FLAGS)
+
+obj/stack.o: D:\project\My_stack\stack.cpp D:\project\My_stack\stack.h
+	g++  D:\project\My_stack\stack.cpp -c -o obj/stack.o $(FLAGS)
 
 obj/generals.o: D:\project\Generals_func\generals.cpp
 	g++ D:\project\Generals_func\generals.cpp -c -o obj/generals.o $(FLAGS)

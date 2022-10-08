@@ -1,6 +1,8 @@
 #ifndef _ASSEMBLER_
 #define _ASSEMBLER_
 
+#include "assembler_config.h"
+
 enum Assembler_errors
 {
     CREAT_CONVERT_FILE_ERR = -1,
@@ -39,5 +41,9 @@ struct File_info
 const int MAXBUF = 20;
 
 int Convert_operations (int fdin);
+
+int File_info_ctor (File_info *file_info);
+
+int File_info_dtor (File_info *file_info);
 
 #endif

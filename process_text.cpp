@@ -25,7 +25,7 @@ static int _Get_count_lines     (const char *buf);
 
 static int _Lines_initialize    (Text_info *text);
 
-FILE *fp_logs = nullptr;
+static FILE *fp_logs = nullptr;
 
 int Text_read (int fdin, Text_info *text)
 {
