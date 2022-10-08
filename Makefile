@@ -12,13 +12,13 @@ build:  obj/main.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o o
 obj/main.o: main.cpp
 	g++ main.cpp -c -o obj/main.o $(FLAGS)
 
-obj/assembler.o: assembler.cpp
+obj/assembler.o: assembler.cpp assembler.h
 	g++ assembler.cpp -c -o obj/assembler.o $(FLAGS)
 
 obj/stack.o: D:\project\My_stack\stack.cpp
 	g++ D:\project\My_stack\stack.cpp -c -o obj/stack.o $(FLAGS)
 
-obj/process_text.o: process_text.cpp
+obj/process_text.o: process_text.cpp process_text.h
 	g++ process_text.cpp -c -o obj/process_text.o $(FLAGS)
 
 obj/log_errors.o: D:\project\Logs\log_errors.cpp

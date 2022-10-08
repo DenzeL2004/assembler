@@ -17,11 +17,11 @@ enum Assembler_commands
 {
     CMD_HLT     = 0,
 
-    CMD_PUSH     = 1,
+    CMD_PUSH    = 1,
 
     CMD_ADD     = 2,
     CMD_SUB     = 3, 
-    CMD_MUT    = 4,
+    CMD_MUT     = 4,
     CMD_DIV     = 5,
     
     CMD_OUT     = 6,
