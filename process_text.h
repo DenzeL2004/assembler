@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-struct Line {
-
+struct Line 
+{
     char *str = nullptr;
     int len_str = 0;
     int id = 0;

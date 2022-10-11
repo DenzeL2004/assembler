@@ -1,10 +1,16 @@
-#ifndef _CONFIG_H_
-#define _CONFIG_H
+#ifndef _CONFIG_ASM_H_
+#define _CONFIG_ASM_H_
 
-static const char *VER = "1.0";
 
-static const char *SIG = "DK";
+
+static const int VER = 1;
+
+static const int SIG = 'D' * 256 + 'K';
 
 static const char *POISON = "POISON";
 
-#endif
+static const char *name_output_file = "out.bin";
+
+
+
+#endif 

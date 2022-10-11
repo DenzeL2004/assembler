@@ -10,65 +10,86 @@
 #include "../My_stack/stack.h"
 
 #include "assembler.h"
+#include "assembler_config.h"
+
 
 FILE *fp_logs = stderr;
+
+
 
 static int Proc_comands (File_info *file_info);
 
 static int Init_file_info (File_info *file_info, int fdin);
 
-static int Check_header (File_info *file_info);
+static int Check_header (Bin_file *Bin_file);
 
 static int Proc_dump (File_info *file_info, Stack *stack);
+
+
 
 static int Init_file_info (File_info *file_info, int fdin)
 {
     assert (file_info != nullptr && "File info is nullptr");
+    assert (fdin >= 0 && "file descriptor is negative number");
 
     struct stat file_stat = {};
-    fstat (fdin, &file_stat);
-
-    int read_byte = read (fdin, file_info, sizeof (File_info) - sizeof (int));
-
-    if (read_byte < 0)
+    if (fstat (fdin, &file_stat))
     {
-        Log_report ("function read outputs a negative number");
+        Log_report ("Unsuccessful memory extraction\n");
         return INIT_FILE_INFO_ERR;
     }
 
-    file_info->code = (int*) calloc (file_info->cnt_com, sizeof (int));
+    Bin_file bin_file = {};
 
-    read_byte = read (fdin, file_info->code, file_stat.st_size - sizeof (File_info) + sizeof (int));
+    int read_byte = read (fdin, &bin_file, sizeof (Bin_file));
 
     if (read_byte < 0)
     {
-        Log_report ("function read outputs a negative number");
+        Log_report ("function read outputs a negative number\n");
+        return INIT_FILE_INFO_ERR;
+    }
+
+    if (Check_header (&bin_file))
+    {
+        Log_report ("File headers did not match constants\n");
+        return INIT_FILE_INFO_ERR;
+    }
+
+    read (fdin, file_info, sizeof (int));
+
+    file_info->code = (int*) calloc (file_info->cnt_com, sizeof (int));
+
+    read_byte = read (fdin, file_info->code, file_stat.st_size - sizeof (Bin_file) + sizeof (int));
+
+    if (read_byte < 0)
+    {
+        Log_report ("function read outputs a negative number\n");
         return INIT_FILE_INFO_ERR;
     }
 
     return 0;
 }
 
-static int Check_header (File_info *file_info)
+static int Check_header (Bin_file *bin_file)
 {
-    assert (file_info != nullptr && "File info is nullptr");
+    assert (bin_file != nullptr && "File info is nullptr");
 
-    /*if (strcmp (file_info->sig, SIG))
+    if (bin_file->signature != SIG)
     {
         Log_report ("Assemblers signature did't match the processor\n");
         return SIGNATURE_MISMATCH_ERR;
     }
 
-    if (strcmp (file_info->ver, VER))
+    if (bin_file->asm_version != VER)
     {
         Log_report ("Assemblers version did't match the processor\n");
         return VERSION_MISMATCH_ERR;
-    }*/
+    }
 
     return 0;
 }
 
-int Processing (int fdin)
+int Run_proc (int fdin)
 {
     assert (fdin >= 0 && "file descriptor is negative number");
 
@@ -84,13 +105,12 @@ int Processing (int fdin)
     File_info file_info = {};
     File_info_ctor (&file_info);
 
-    Init_file_info (&file_info, fdin);
-
-    if (Check_header (&file_info))
+    if (Init_file_info (&file_info, fdin))
     {
-        Log_report ("File headers did not match constants\n");
+        Log_report ("File initialization error\n");
         return PROCESS_ERR;
     }
+    
 
     if (Proc_comands (&file_info))
     {
@@ -98,7 +118,11 @@ int Processing (int fdin)
         return PROCESS_ERR;
     }
 
-    File_info_dtor (&file_info);
+    if (File_info_dtor (&file_info))
+    {
+        Log_report ("File destructor ended with an error\n");
+        return PROCESS_ERR;
+    }
 
     #ifdef USE_LOG
         
@@ -118,17 +142,34 @@ static int Proc_comands (File_info *file_info)
     int *code = file_info->code;
 
     Stack stack = {};
-    Stack_ctor (&stack, 5);
+    Stack_ctor (&stack, Min_stack_size);
 
     while (ip_com < file_info->cnt_com)
     {
         switch (code[ip_com++])
         {
+            case CMD_LABLE:
+                break;
+            
+            case CMD_JUMP:
+                ip_com = code [ip_com];
+                break;
+
             case CMD_PUSH:
             {
                 Stack_push (&stack, code[ip_com++]);
-                break;
             }
+                break;
+
+            case CMD_IN:
+            {
+                elem val = 0;
+                scanf ("%" PRINT_TYPE, &val);
+                Stack_push (&stack, val);
+                ip_com++;
+            }
+                break;
+            
 
             case CMD_ADD:
             {
@@ -137,9 +178,9 @@ static int Proc_comands (File_info *file_info)
                 Stack_pop (&stack, &val2);
 
                 Stack_push (&stack, val1 + val2);
-
-                break;
             }
+                break;
+            
 
             case CMD_MUT:
             {
@@ -148,9 +189,9 @@ static int Proc_comands (File_info *file_info)
                 Stack_pop (&stack, &val2);
 
                 Stack_push (&stack, val1 * val2);
-                
+            }    
                 break;
-            }
+            
 
             case CMD_SUB:
             {
@@ -159,9 +200,8 @@ static int Proc_comands (File_info *file_info)
                 Stack_pop (&stack, &val2);
 
                 Stack_push (&stack, val1 - val2);
-                
-                break;
             }
+                break;
 
             case CMD_DIV:
             {
@@ -170,9 +210,8 @@ static int Proc_comands (File_info *file_info)
                 Stack_pop (&stack, &val2);
 
                 Stack_push (&stack, val1 / val2);
-                
-                break;
             }
+                break;
 
             case CMD_OUT:
             {
@@ -192,6 +231,8 @@ static int Proc_comands (File_info *file_info)
                 Log_report ("Unknown command\n");
                 return PROCESS_ERR;
         }
+
+        printf ("%d\n", ip_com);
 
         Proc_dump (file_info, &stack);
     }
@@ -227,7 +268,6 @@ static int Proc_dump (File_info *file_info, Stack *stack)
     }
 
     printf ("\n");
-
     printf ("============================================\n\n");
 
     return 0;

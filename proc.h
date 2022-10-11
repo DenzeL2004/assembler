@@ -12,6 +12,14 @@ enum Processor_err
     PROCESS_COM_ERR         = -5,
 };
 
-int Processing (int fdin);
+struct Bin_file 
+{
+    int  signature   = 0;
+    int  asm_version = 0;
+};
 
-#endif
+const int Min_stack_size = 5;
+
+int Run_proc (int fdin);
+
+#endif //#endif _PROC_H_

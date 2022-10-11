@@ -19,20 +19,17 @@ int main ()
 {
     int fd = open ("input.txt", O_RDONLY, 0);
     
-    Convert_operations (fd); 
+    if (Convert_operations (fd))
+        return -1; 
 
     close (fd);
 
-    fd = open ("convert_input.bin", O_RDONLY, 0);
+    fd = open (name_output_file, O_RDONLY, 0);
 
-    Processing (fd);
+    Run_proc (fd);
 
     close (fd);
 
-    for (int id_com = 0; id_com < 6; id_com++)
-    {
-        printf ("%02d ",id_com);     
-    }
 
     return 0;
 }
