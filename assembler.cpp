@@ -42,42 +42,6 @@ static int Asm_struct_dtor (Asm_struct *asmst);
     }while (0)
 
 
-int File_info_ctor (File_info *file_info)
-{
-    assert (file_info != nullptr && "file info is nullptr");
-
-    file_info->code = nullptr;
-
-    file_info->cnt_com = 0;
-
-    return 0;
-}
-
-int File_info_dtor (File_info *file_info)
-{
-    assert (file_info != nullptr && "file info is nullptr");
-
-    if (file_info->code == nullptr)
-    {
-        Log_report ("Memory has not been allocated yet\n");
-        return 0;
-    }
-
-    if (file_info->code == (unsigned char*) POISON)
-    {
-        Log_report ("Memory has been freed\n");
-        return 0;
-    }
-
-    free (file_info->code);
-
-    file_info->code = (unsigned char*) POISON;
-
-    file_info->cnt_com = -1;
-
-    return 0;
-}
-
 static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
 {
     assert (asmst != nullptr && "asmst is nullptr");

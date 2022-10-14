@@ -54,11 +54,6 @@ enum Assembler_commands
     CMD_OUT     = 17,
 };
 
-struct File_info
-{
-    int cnt_com = 0;
-    unsigned char *code = nullptr;
-};
 
 struct Asm_struct
 {
@@ -70,15 +65,9 @@ struct Asm_struct
 };
 
 
-
 const int Maxbuf = 20;
 
 
-
 int Convert_operations (int fdin);
-
-int File_info_ctor (File_info *file_info);
-
-int File_info_dtor (File_info *file_info);
 
 #endif  //#endif _ASSEMBLER_H_

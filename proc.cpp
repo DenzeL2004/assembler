@@ -16,20 +16,60 @@
 FILE *fp_logs = stderr;
 
 
+static int Cpu_struct_ctor (Cpu_struct *cpu);
 
-static int Proc_comands (File_info *file_info);
+static int Cpu_struct_dtor (Cpu_struct *cpu);
 
-static int Init_file_info (File_info *file_info, int fdin);
+static int Proc_comands (Cpu_struct *cpu);
+
+static int Init_cpu (Cpu_struct *cpu, int fdin);
 
 static int Check_header (Bin_file *Bin_file);
 
-static int Proc_dump (File_info *file_info, Stack *stack);
+static int Proc_dump (Cpu_struct *cpu, Stack *stack);
 
 
-
-static int Init_file_info (File_info *file_info, int fdin)
+static int Cpu_struct_ctor (Cpu_struct *cpu)
 {
-    assert (file_info != nullptr && "File info is nullptr");
+    assert (cpu != nullptr && "fcpu is nullptr");
+
+    cpu->code = nullptr;
+
+    cpu->cnt_bytes = 0;
+
+    cpu->cur_cmd = -1;
+
+    return 0;
+}
+
+static int Cpu_struct_dtor (Cpu_struct *cpu)
+{
+    if (cpu->code == nullptr)
+    {
+        Log_report ("Memory has not been allocated yet\n");
+        return 0;
+    }
+
+    if (cpu->code == (unsigned char*) POISON)
+    {
+        Log_report ("Memory has been freed\n");
+        return 0;
+    }
+
+    free (cpu->code);
+
+    cpu->code = (unsigned char*) POISON;
+
+    cpu->cnt_bytes = -1;
+
+    cpu->cur_cmd = -1;
+
+    return 0;
+}
+
+static int Init_cpu (Cpu_struct *cpu, int fdin)
+{
+    assert (cpu != nullptr && "cpu is nullptr");
     assert (fdin >= 0 && "file descriptor is negative number");
 
     struct stat file_stat = {};
@@ -55,11 +95,11 @@ static int Init_file_info (File_info *file_info, int fdin)
         return INIT_FILE_INFO_ERR;
     }
 
-    read (fdin, file_info, sizeof (int));
+    read (fdin, cpu, sizeof (int));
 
-    file_info->code = (unsigned char*) calloc (file_info->cnt_com, sizeof (char));
+    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes, sizeof (char));
 
-    read_byte = read (fdin, file_info->code, file_stat.st_size - sizeof (Bin_file) + sizeof (int));
+    read_byte = read (fdin, cpu->code, file_stat.st_size - sizeof (Bin_file) + sizeof (int));
 
     if (read_byte < 0)
     {
@@ -102,22 +142,22 @@ int Run_proc (int fdin)
 
     #endif
 
-    File_info file_info = {};
-    File_info_ctor (&file_info);
+    Cpu_struct cpu = {};
+    Cpu_struct_ctor (&cpu);
 
-    if (Init_file_info (&file_info, fdin))
+    if (Init_cpu (&cpu, fdin))
     {
         Log_report ("File initialization error\n");
         return PROCESS_ERR;
     }
 
-    if (Proc_comands (&file_info))
+    if (Proc_comands (&cpu))
     {
         Log_report ("command processing failed\n");
         return PROCESS_ERR;
     }
 
-    if (File_info_dtor (&file_info))
+    if (Cpu_struct_dtor (&cpu))
     {
         Log_report ("File destructor ended with an error\n");
         return PROCESS_ERR;
@@ -133,18 +173,20 @@ int Run_proc (int fdin)
     return 0;
 }
 
-static int Proc_comands (File_info *file_info)
+static int Proc_comands (Cpu_struct *cpu)
 {
-    assert (file_info != nullptr && "File info is nullptr");    
+    assert (cpu != nullptr && "cpu is nullptr");    
 
-    unsigned char *code = file_info->code;
+    unsigned char *code = cpu->code;
     unsigned char *ptr_beg_code = code;
 
     Stack stack = {};
     Stack_ctor (&stack, Min_stack_size);
 
-    while (code - ptr_beg_code < file_info->cnt_com)
+    while (code - ptr_beg_code < cpu->cnt_bytes)
     {
+        cpu->cur_cmd = code - ptr_beg_code;
+
         char cmd = *code;
         code++;
 
@@ -236,7 +278,7 @@ static int Proc_comands (File_info *file_info)
                 return PROCESS_ERR;
         }
 
-        Proc_dump (file_info, &stack);
+        Proc_dump (cpu, &stack);
     }
 
     Stack_dtor (&stack);
@@ -244,30 +286,36 @@ static int Proc_comands (File_info *file_info)
     return 0;
 }
 
-static int Proc_dump (File_info *file_info, Stack *stack)
+static int Proc_dump (Cpu_struct *cpu, Stack *stack)
 {
-    assert (file_info != nullptr && "Code is nullptr");
+    assert (cpu != nullptr && "cpu is nullptr");
     assert (stack != nullptr && "stack is nullptr");
 
     Stack_dump (stack);
 
     printf ("============================================\n");
 
-    printf ("id_com: ");
+    //printf ("cur_byte: ");
 
-    for (int id_com = 0; id_com < file_info->cnt_com; id_com++)
+    for (int ip_com = 0; ip_com < cpu->cnt_bytes; ip_com++)
     {
-        printf ("%03d ", id_com);     
+        printf ("%03d ", ip_com);     
     }
 
     printf ("\n");
 
-    printf ("   com: ");
+  //  printf ("     com: ");
 
-    for (int id_com = 0; id_com < file_info->cnt_com; id_com++)
+    for (int cur_bte = 0; cur_bte < cpu->cnt_bytes; cur_bte++)
     {
-        printf ("%03d ", file_info->code[id_com]);
+        printf ("%03d ", cpu->code[cur_bte]);
     }
+
+    printf ("\n");
+
+    printf (" %*s", (cpu->cur_cmd)*4, "^");
+    printf ("cur_cmd = %d", cpu->code[cpu->cur_cmd]);
+    getc (stdin);
 
     printf ("\n");
     printf ("============================================\n\n");

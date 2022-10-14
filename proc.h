@@ -18,6 +18,15 @@ struct Bin_file
     int  asm_version = 0;
 };
 
+struct  Cpu_struct
+{
+    int cnt_bytes = 0;
+    unsigned char *code = nullptr;
+
+    int cur_cmd  = 0;
+};
+
+
 const int Min_stack_size = 5;
 
 int Run_proc (int fdin);
