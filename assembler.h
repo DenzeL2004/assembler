@@ -18,6 +18,9 @@ enum Assembler_errors
 
     CONVERT_COMMAND_ERR    = -6, 
 
+    ST_ASM_DTOR_ERR        = -9,
+    ST_ASM_CTOR_ERR        = -10,
+
     FILE_INFO_DTOR_ERR     = -7,
 
     FREE_BUF_ERR           = -8, 
@@ -36,21 +39,31 @@ enum Assembler_commands
     CMD_DIV     = 6,
     
     CMD_LABLE   = 7,
+
     CMD_JUMP    = 8,
 
-    CMD_OUT     = 9,
+    CMD_JA      = 9, 
+    CMD_JAE     = 10,
+    CMD_JB      = 11,
+    CMD_JBE     = 12,
+    CMD_JL      = 13,
+    CMD_JM      = 14,
+
+    CMD_POP    = 16,
+
+    CMD_OUT     = 17,
 };
 
 struct File_info
 {
     int cnt_com = 0;
-    int *code = nullptr;
+    unsigned char *code = nullptr;
 };
 
 struct Asm_struct
 {
-    int cnt_com = 0;
-    int *code = nullptr;
+    int cnt_bytes = 0;
+    unsigned char *code = nullptr;
 
     int cnt_labels = 0;
     Label* labels = nullptr;

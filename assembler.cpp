@@ -22,14 +22,24 @@ static FILE *fp_logs = stderr;
 static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst, 
                                 const int cur_bypass);
 
-static int Write_convert_file (int *code, int cnt_com);
-
-static int Code_validity_check (Asm_struct *asmst);
+static int Write_convert_file (Asm_struct *asmst);
 
 static int Asm_struct_ctor (Asm_struct *asmst, int code_size);
 
 static int Asm_struct_dtor (Asm_struct *asmst);
 
+
+#define Set_num_cmd(code, cmd, shift)       \
+    do{                                      \
+        *code = cmd;                         \
+         code += shift;                    \                              
+    }while (0)
+
+#define Set_args(code, args, shift)         \
+    do{                                      \
+        *(int*) code = args;                 \
+                code += shift;               \         
+    }while (0)
 
 
 int File_info_ctor (File_info *file_info)
@@ -53,7 +63,7 @@ int File_info_dtor (File_info *file_info)
         return 0;
     }
 
-    if (file_info->code == (int*) POISON)
+    if (file_info->code == (unsigned char*) POISON)
     {
         Log_report ("Memory has been freed\n");
         return 0;
@@ -61,7 +71,7 @@ int File_info_dtor (File_info *file_info)
 
     free (file_info->code);
 
-    file_info->code = (int*) POISON;
+    file_info->code = (unsigned char*) POISON;
 
     file_info->cnt_com = -1;
 
@@ -72,7 +82,7 @@ static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
 {
     assert (asmst != nullptr && "asmst is nullptr");
 
-    asmst->code = (int*) calloc (code_size * 2, sizeof (int));
+    asmst->code = (unsigned char*) calloc (code_size * 2, sizeof (int));
 
     if (asmst->code == nullptr)
     {
@@ -80,7 +90,7 @@ static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
         return ERR_MEMORY_ALLOC;
     }
 
-    asmst->cnt_com = 0;
+    asmst->cnt_bytes = 0;
 
     asmst->cnt_labels = 0;
     asmst->labels = (Label*) calloc (Max_cnt_labels, sizeof(Label));
@@ -99,7 +109,7 @@ static int Asm_struct_dtor (Asm_struct *asmst)
 {
     assert (asmst != nullptr && "asmst is nullptr");
 
-    asmst->cnt_com = -1;
+    asmst->cnt_bytes = -1;
 
     asmst->cnt_labels = -1;
 
@@ -143,40 +153,38 @@ int Convert_operations (int fdin)
     if (Asm_struct_ctor (&asmst, commands_line.cnt_lines))
     {
         Log_report ("Structure creation error Asm_struct\n");
-        return EMPTY_FILE_ERR;
+        return ST_ASM_CTOR_ERR;
     }
 
-    asmst.cnt_com = Get_convert_command (&commands_line, &asmst, FIRST);
+    asmst.cnt_bytes = Get_convert_command (&commands_line, &asmst, FIRST);
 
-    if (asmst.cnt_com <= 0) 
+    if (asmst.cnt_bytes <= 0) 
     {
         Log_report ("Command convert error on FIRST command traversal\n");
         return CONVERT_COMMAND_ERR;
     }
 
 
-    asmst.cnt_com = Get_convert_command (&commands_line, &asmst, SECOND);
+    asmst.cnt_bytes = Get_convert_command (&commands_line, &asmst, SECOND);
 
-    if (asmst.cnt_com <= 0)
+    if (asmst.cnt_bytes <= 0)
     {
         Log_report ("Command convert error on SECOND command traversal\n");
         return CONVERT_COMMAND_ERR;
     }
 
-    if (Code_validity_check (&asmst))
-    {
-        Log_report ("array code is not compliant\n");
-        return CONVERT_COMMAND_ERR;
-    }
 
-
-    if (Write_convert_file (asmst.code,  asmst.cnt_com))
+    if (Write_convert_file (&asmst))
     {
         Log_report ("An error occurred while writing to the output file\n");
         return CREAT_CONVERT_FILE_ERR;
     }
 
-    Asm_struct_dtor (&asmst);
+    if (Asm_struct_dtor (&asmst))
+    {
+        Log_report ("Error in file destructor\n");
+        return ST_ASM_DTOR_ERR;
+    }
 
     if (Free_buffer (&commands_line))
     {
@@ -201,7 +209,10 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
     assert (asmst != nullptr && "asmst is nullptr");
 
     char cmd[Maxbuf] = {'0'};
-    int ip_com = 0;
+    int ip_cmd = 0;
+
+    unsigned char *code = asmst->code;
+    unsigned char *ptr_beg_code = code;
 
     for (int ip_line = 0; ip_line < commands_line->cnt_lines; ip_line++)
     {
@@ -217,13 +228,12 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
         
         if (cmd[0] == ':')
         {
-            asmst->code[ip_com] = CMD_LABLE;
-
             int ip_jump = Find_label (asmst->labels, (cmd + 1), asmst->cnt_labels);
 
             if (ip_jump == -1)
             {
-                Label_ctor (asmst->labels + asmst->cnt_labels, ip_com, (cmd + 1));
+                Label_ctor (asmst->labels + asmst->cnt_labels, 
+                            code - ptr_beg_code, (cmd + 1));
                 (asmst->labels + asmst->cnt_labels)->bypass = cur_bypass;
 
                 asmst->cnt_labels++;
@@ -237,14 +247,11 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
                     return REDEF_LABEL_ERR;
                 }
             }
-
-            ip_com++;
-
         }
 
         else if (strcmpi (cmd, "jump") == 0) 
         {
-            asmst->code[ip_com++] = CMD_JUMP;
+            Set_num_cmd (code, CMD_JUMP, sizeof (char));
 
             char name_label[Maxbuf] = {'0'};
 
@@ -256,14 +263,14 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
 
             int ip_jump = Find_label (asmst->labels, name_label, asmst->cnt_labels);
 
-            if (ip_jump == -1) asmst->code[ip_com++] = ip_jump;
-            else               asmst->code[ip_com++] = (asmst->labels + ip_jump)->ptr_jump;
+            if (ip_jump == -1) Set_args (code, ip_jump, sizeof (int));
+            else               Set_args (code, (asmst->labels + ip_jump)->ptr_jump, sizeof (int));
 
         }
         
         else if (strcmpi (cmd, "push") == 0)
         {
-            asmst->code[ip_com++] = CMD_PUSH;
+            Set_num_cmd (code, CMD_PUSH, sizeof (char));
 
             int val = 0;
 
@@ -273,42 +280,42 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
                 return CONVERT_COMMAND_ERR;
             }
 
-            asmst->code[ip_com++] = val;
+            Set_args (code, val, sizeof (int));
         }
         
         else if (strcmpi (cmd, "add") == 0)
         {
-            asmst->code[ip_com++] = CMD_ADD;
+            Set_num_cmd (code, CMD_ADD, sizeof (char));
         }
         
         else if (strcmpi (cmd, "sub") == 0)
         {
-            asmst->code[ip_com++] = CMD_SUB;
+            Set_num_cmd (code, CMD_SUB, sizeof (char));
         }
         
         else if (strcmpi (cmd, "mult") == 0)
         {
-            asmst->code[ip_com++] = CMD_MUT;
+            Set_num_cmd (code, CMD_MUT, sizeof (char));
         }
         
         else if (strcmpi (cmd, "div") == 0)
         {
-            asmst->code[ip_com++] = CMD_DIV;
+            Set_num_cmd (code, CMD_DIV, sizeof (char));
         }
         
         else if (strcmpi (cmd, "out") == 0)
         {
-            asmst->code[ip_com++] = CMD_OUT;
+            Set_num_cmd (code, CMD_OUT, sizeof (char));
         }
         
         else if (strcmpi (cmd, "hlt") == 0)
         {
-            asmst->code[ip_com++] = CMD_HLT;
+            Set_num_cmd (code, CMD_HLT, sizeof (char));
         }
 
         else if (strcmpi (cmd, "in") == 0)
         {
-            asmst->code[ip_com++] = CMD_IN;
+            Set_num_cmd (code, CMD_IN, sizeof (char));
         }
         
         else
@@ -320,23 +327,12 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
         cmd[0] = '\0';
     }
 
-    return ip_com;
+    return (code - ptr_beg_code);
 }
 
-static int Code_validity_check (Asm_struct *asmst)
+static int Write_convert_file (Asm_struct *asmst)
 {
     assert (asmst != nullptr && "asmst is nullptr");
-
-    for (int ip = 0; ip < asmst->cnt_com; ip++)
-        if (asmst->code[ip] < 0)
-            return 1;
-    
-    return 0;
-}
-
-static int Write_convert_file (int *code, int cnt_com)
-{
-    assert (code != nullptr && "code is nullptr");
 
     int fdout = creat (name_output_file, S_IRWXU);
 
@@ -347,12 +343,12 @@ static int Write_convert_file (int *code, int cnt_com)
     }
 
 
-    write (fdout, &SIG, sizeof (SIG));
-    write (fdout, &VER, sizeof (VER)); 
+    write (fdout, &Sig, sizeof (Sig));
+    write (fdout, &Ver, sizeof (Ver)); 
 
-    write (fdout, &cnt_com, sizeof(int));
+    write (fdout, &(asmst->cnt_bytes), sizeof(int));
 
-    write (fdout, code, sizeof (int) * cnt_com);
+    write (fdout, asmst->code, sizeof (char) * asmst->cnt_bytes);
     
     if (close (fdout))
     {

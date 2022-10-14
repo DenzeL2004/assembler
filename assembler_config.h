@@ -3,9 +3,9 @@
 
 
 
-static const int VER = 1;
+static const int Ver = 1;
 
-static const int SIG = 'D' * 256 + 'K';
+static const int Sig = 'D' * 256 + 'K';
 
 static const char *POISON = "POISON";
 
