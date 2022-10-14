@@ -27,6 +27,8 @@ static int _Lines_initialize    (Text_info *text);
 
 static FILE *fp_logs = nullptr;
 
+//======================================================================================
+
 int Text_read (int fdin, Text_info *text)
 {
     assert (fdin >= 0 && "fdin is negative number");
@@ -54,6 +56,8 @@ int Text_read (int fdin, Text_info *text)
     return 0;
 }
 
+//======================================================================================
+
 static int _Work_with_bufer (int fdin, Text_info *text)
 {
     assert (fdin >= 0 && "fdin is negative number");
@@ -71,6 +75,8 @@ static int _Work_with_bufer (int fdin, Text_info *text)
 
     return 0;
 }
+
+//======================================================================================
 
 static int _Read_file_to_buffer (int fdin, Text_info *text)
 {
@@ -92,6 +98,8 @@ static int _Read_file_to_buffer (int fdin, Text_info *text)
     return 0;
 }
 
+//======================================================================================
+
 static int _Create_buffer (int fdin, Text_info *text)
 {
     assert (fdin >= 0 && "fdin is negative number");
@@ -111,6 +119,8 @@ static int _Create_buffer (int fdin, Text_info *text)
     return 0;
 } 
 
+//======================================================================================
+
 static long _Get_file_size (int fdin)
 {
     assert (fdin >= 0 && "fdin is negative number");
@@ -121,6 +131,8 @@ static long _Get_file_size (int fdin)
     return file_info.st_size;
 }
 
+//======================================================================================
+
 static int _Read_to_buffer (int fdin, char *buf, long text_size)
 {
     assert (fdin >= 0 && "fdin is negative number");
@@ -128,6 +140,8 @@ static int _Read_to_buffer (int fdin, char *buf, long text_size)
     
     return read (fdin, buf, text_size);
 }
+
+//======================================================================================
 
 static int _Get_count_lines (const char *buf)
 {
@@ -139,12 +153,14 @@ static int _Get_count_lines (const char *buf)
     char ch = 0;
 
     while ((ch = *(buffer++)) != '\0'){     
-        if (ch == '\n')
+        if (ch == '\n' || ch == ' ')
             counter++;
     }
 
     return counter;
 }
+
+//======================================================================================
 
 static int _Lines_initialize (Text_info *text)
 {
@@ -159,7 +175,7 @@ static int _Lines_initialize (Text_info *text)
 
     while ((ch = *(buffer++)) != '\0'){
         
-        if (ch == '\n'){
+        if (ch == '\n' || ch == ' '){
             *(buffer - 1) = '\0';
             cur_line->str = str_start;
 
@@ -174,6 +190,8 @@ static int _Lines_initialize (Text_info *text)
 
     return 0;
 }
+
+//======================================================================================
 
 int Free_buffer (Text_info *text)
 {
@@ -200,6 +218,8 @@ int Free_buffer (Text_info *text)
     return 0;
 }
 
+//======================================================================================
+
 int Text_write (FILE *fpout, int cnt_lines, Line *lines)
 {
     assert (fpout != nullptr && "file fpout is nullptr");
@@ -211,3 +231,4 @@ int Text_write (FILE *fpout, int cnt_lines, Line *lines)
     return 0;
 }
 
+//======================================================================================

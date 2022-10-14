@@ -38,14 +38,13 @@ int Find_label (Label *labels, const char *name_new_label, const int cnt_labels)
 
     for (int ip_label = 0; ip_label < cnt_labels; ip_label++) 
     {
-        
         if ((labels + ip_label)->string_code == new_string_code) 
         {
             return ip_label;
         }
     }
 
-    return -1;
+    return Uninit_label;
 }
 
 int Get_str_code (const char *str)

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "proc.h"
+#include "../Generals_func/generals.h"
 #include "../Logs/log_errors.h"
 #include "../My_stack/stack.h"
 
@@ -20,14 +21,20 @@ static int Cpu_struct_ctor (Cpu_struct *cpu);
 
 static int Cpu_struct_dtor (Cpu_struct *cpu);
 
-static int Proc_comands (Cpu_struct *cpu);
+static int Init_cpu_ram    (Cpu_struct *cpu);
 
-static int Init_cpu (Cpu_struct *cpu, int fdin);
+static int Init_cpu        (Cpu_struct *cpu, int fdin);
+
+
+static int Comands_exe (Cpu_struct *cpu);
 
 static int Check_header (Bin_file *Bin_file);
 
-static int Proc_dump (Cpu_struct *cpu, Stack *stack);
+static int Proc_dump (Cpu_struct *cpu);
 
+
+
+//======================================================================================
 
 static int Cpu_struct_ctor (Cpu_struct *cpu)
 {
@@ -39,33 +46,52 @@ static int Cpu_struct_ctor (Cpu_struct *cpu)
 
     cpu->cur_cmd = -1;
 
+    for (int ip_reg = 0; ip_reg < Cnt_reg; ip_reg++)
+    {
+        cpu->regs[ip_reg] = 0;
+    }
+
+    cpu->ram = nullptr;
+
+    if (Stack_ctor (&cpu->stack, Min_stack_size))
+    {
+        Log_report ("An error occurred in the stack construction\n");
+        return PROC_CTOR_ERR;
+    }
+
     return 0;
 }
 
+//======================================================================================
+
 static int Cpu_struct_dtor (Cpu_struct *cpu)
 {
-    if (cpu->code == nullptr)
-    {
+    if (Check_nullptr (cpu->code))
         Log_report ("Memory has not been allocated yet\n");
-        return 0;
-    }
+    else
+        free (cpu->code);
 
-    if (cpu->code == (unsigned char*) POISON)
-    {
-        Log_report ("Memory has been freed\n");
-        return 0;
-    }
-
-    free (cpu->code);
-
-    cpu->code = (unsigned char*) POISON;
 
     cpu->cnt_bytes = -1;
 
     cpu->cur_cmd = -1;
 
+    if (Check_nullptr (cpu->ram))
+        Log_report ("Memory has not been allocated yet\n");
+    else
+        free (cpu->ram);
+
+
+    if (Stack_dtor (&cpu->stack))
+    {
+        Log_report ("An error occurred in stack deconstruction\n");
+        return PROC_DTOR_ERR;
+    }
+
     return 0;
 }
+
+//======================================================================================
 
 static int Init_cpu (Cpu_struct *cpu, int fdin)
 {
@@ -76,7 +102,7 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
     if (fstat (fdin, &file_stat))
     {
         Log_report ("Unsuccessful memory extraction\n");
-        return INIT_FILE_INFO_ERR;
+        return PROCESS_ERR;
     }
 
     Bin_file bin_file = {};
@@ -86,13 +112,13 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
     if (read_byte < 0)
     {
         Log_report ("function read outputs a negative number\n");
-        return INIT_FILE_INFO_ERR;
+        return PROCESS_ERR;
     }
 
     if (Check_header (&bin_file))
     {
         Log_report ("File headers did not match constants\n");
-        return INIT_FILE_INFO_ERR;
+        return PROCESS_ERR;
     }
 
     read (fdin, cpu, sizeof (int));
@@ -104,11 +130,13 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
     if (read_byte < 0)
     {
         Log_report ("function read outputs a negative number\n");
-        return INIT_FILE_INFO_ERR;
+        return PROCESS_ERR;
     }
 
     return 0;
 }
+
+//======================================================================================
 
 static int Check_header (Bin_file *bin_file)
 {
@@ -151,7 +179,7 @@ int Run_proc (int fdin)
         return PROCESS_ERR;
     }
 
-    if (Proc_comands (&cpu))
+    if (Comands_exe (&cpu))
     {
         Log_report ("command processing failed\n");
         return PROCESS_ERR;
@@ -173,15 +201,15 @@ int Run_proc (int fdin)
     return 0;
 }
 
-static int Proc_comands (Cpu_struct *cpu)
+//======================================================================================
+
+static int Comands_exe (Cpu_struct *cpu)
 {
     assert (cpu != nullptr && "cpu is nullptr");    
 
     unsigned char *code = cpu->code;
     unsigned char *ptr_beg_code = code;
 
-    Stack stack = {};
-    Stack_ctor (&stack, Min_stack_size);
 
     while (code - ptr_beg_code < cpu->cnt_bytes)
     {
@@ -190,7 +218,7 @@ static int Proc_comands (Cpu_struct *cpu)
         char cmd = *code;
         code++;
 
-        switch (cmd)
+        switch (cmd & Cmd_mask)
         {   
             case CMD_JUMP:
                 code = (ptr_beg_code + *code);
@@ -198,11 +226,72 @@ static int Proc_comands (Cpu_struct *cpu)
 
             case CMD_PUSH:
             {
-                Stack_push (&stack, *(elem*) code);
+                elem arg = 0;
 
-                code += sizeof (elem);
+                if (cmd & ARG_NUM)
+                {
+                    arg  += *(int*) code;
+                    code += sizeof (int); 
+                }    
+
+                if (cmd & ARG_REG)
+                {
+                    if (*code < Cnt_reg)
+                        arg  += cpu->regs[*code];
+                    else
+                    {
+                        Log_report ("Accessing unallocated memory\n");
+                        return PROCESS_COM_ERR;
+                    }
+
+                    code += sizeof (char); 
+                }
+
+                if (cmd & ARG_RAM)
+                {
+                    if (arg < Ram_size && arg >= 0)
+                        arg = cpu->ram[arg];
+                    else
+                    {
+                        Log_report ("accessing unallocated memory\n");
+                        return PROCESS_COM_ERR;
+                    }
+                }
+                
+                Stack_push (&cpu->stack, arg);
             }
                 break;
+
+            /*case CMD_POP:
+            {
+                elem val = 0;
+                Stack_pop (&cpu->stack, &val);
+
+                elem arg = 0; 
+
+                if (cmd & ARG_NUM)
+                {
+                    arg  += *(int*) code;
+                    code += sizeof (int); 
+                }  
+
+                if (cmd & ARG_REG)
+                {
+                    arg  += cpu->regs[*code];
+                    code += sizeof (char); 
+
+                    if (cmd & ARG_RAM)
+                    {
+                        if (arg < Cnt_reg)
+                            cpu->ram[arg] = val;
+                        else
+                            Log_report ("Accessing unallocated memory\n");
+                    }
+
+                }
+                
+            }
+                break;*/
 
             case CMD_IN:
             {
@@ -210,7 +299,7 @@ static int Proc_comands (Cpu_struct *cpu)
                 
                 scanf ("%" USE_TYPE, &val);
                 
-                Stack_push (&stack, val);
+                Stack_push (&cpu->stack, val);
                 
                 code++;
             }
@@ -220,10 +309,10 @@ static int Proc_comands (Cpu_struct *cpu)
             case CMD_ADD:
             {
                 elem val1 = 0, val2 = 0;
-                Stack_pop (&stack, &val1);
-                Stack_pop (&stack, &val2);
+                Stack_pop (&cpu->stack, &val1);
+                Stack_pop (&cpu->stack, &val2);
 
-                Stack_push (&stack, val1 + val2);
+                Stack_push (&cpu->stack, val1 + val2);
             }
                 break;
             
@@ -231,10 +320,10 @@ static int Proc_comands (Cpu_struct *cpu)
             case CMD_MUT:
             {
                 elem val1 = 0, val2 = 0;
-                Stack_pop (&stack, &val1);
-                Stack_pop (&stack, &val2);
+                Stack_pop (&cpu->stack, &val1);
+                Stack_pop (&cpu->stack, &val2);
 
-                Stack_push (&stack, val1 * val2);
+                Stack_push (&cpu->stack, val1 * val2);
             }    
                 break;
             
@@ -242,27 +331,27 @@ static int Proc_comands (Cpu_struct *cpu)
             case CMD_SUB:
             {
                 elem val1 = 0, val2 = 0;
-                Stack_pop (&stack, &val1);
-                Stack_pop (&stack, &val2);
+                Stack_pop (&cpu->stack, &val1);
+                Stack_pop (&cpu->stack, &val2);
 
-                Stack_push (&stack, val1 - val2);
+                Stack_push (&cpu->stack, val1 - val2);
             }
                 break;
 
             case CMD_DIV:
             {
                 elem val1 = 0, val2 = 0;
-                Stack_pop (&stack, &val1);
-                Stack_pop (&stack, &val2);
+                Stack_pop (&cpu->stack, &val1);
+                Stack_pop (&cpu->stack, &val2);
 
-                Stack_push (&stack, val1 / val2);
+                Stack_push (&cpu->stack, val1 / val2);
             }
                 break;
 
             case CMD_OUT:
             {
                 elem val = 0;
-                Stack_pop (&stack, &val);
+                Stack_pop (&cpu->stack, &val);
 
                 printf ("last val stack %" USE_TYPE "\n", val);
                 break;
@@ -278,24 +367,61 @@ static int Proc_comands (Cpu_struct *cpu)
                 return PROCESS_ERR;
         }
 
-        Proc_dump (cpu, &stack);
+        Proc_dump (cpu);
     }
-
-    Stack_dtor (&stack);
 
     return 0;
 }
 
-static int Proc_dump (Cpu_struct *cpu, Stack *stack)
+//======================================================================================
+
+/*static int Get_arg (char cmd, char *code)
+{
+    assert (cpu == nullptr && "cpu is nullptr");
+
+    int arg = 0;
+
+    if (cmd & ARG_NUM)
+    {
+        arg  += *(int*) code;
+        code += sizeof (int); 
+    }    
+
+    if (cmd & ARG_REG)
+    {
+        arg  += *code;
+        code += sizeof (char); 
+    }
+
+    return 0;
+}*/
+
+//======================================================================================
+
+static int Init_cpu_ram (Cpu_struct *cpu)
+{
+    assert (cpu == nullptr && "cpu is nullptr");
+
+    cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
+
+    if (Check_nullptr (cpu->ram))
+    {
+        Log_report ("An error occurred while allocating memory for the processor\n");
+        return NOT_ALLOC_PTR;
+    }
+
+    return 0;
+}
+
+//======================================================================================
+
+static int Proc_dump (Cpu_struct *cpu)
 {
     assert (cpu != nullptr && "cpu is nullptr");
-    assert (stack != nullptr && "stack is nullptr");
 
-    Stack_dump (stack);
+    Stack_dump (&cpu->stack);
 
-    printf ("============================================\n");
-
-    //printf ("cur_byte: ");
+    printf ("============================================\n\n");
 
     for (int ip_com = 0; ip_com < cpu->cnt_bytes; ip_com++)
     {
@@ -303,8 +429,6 @@ static int Proc_dump (Cpu_struct *cpu, Stack *stack)
     }
 
     printf ("\n");
-
-  //  printf ("     com: ");
 
     for (int cur_bte = 0; cur_bte < cpu->cnt_bytes; cur_bte++)
     {
@@ -322,3 +446,5 @@ static int Proc_dump (Cpu_struct *cpu, Stack *stack)
 
     return 0;
 }
+
+//======================================================================================

@@ -21,6 +21,8 @@ enum Assembler_errors
     ST_ASM_DTOR_ERR        = -9,
     ST_ASM_CTOR_ERR        = -10,
 
+    DEF_ARGS_ERR           = -11,
+
     FILE_INFO_DTOR_ERR     = -7,
 
     FREE_BUF_ERR           = -8, 

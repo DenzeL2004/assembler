@@ -19,14 +19,18 @@ static FILE *fp_logs = stderr;
 
 
 
-static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst, 
-                                const int cur_bypass);
-
-static int Write_convert_file (Asm_struct *asmst);
-
 static int Asm_struct_ctor (Asm_struct *asmst, int code_size);
 
 static int Asm_struct_dtor (Asm_struct *asmst);
+
+static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst, 
+                                const int cur_bypass);
+
+static int Def_args (char *str, int len_str, unsigned char *code, 
+                                             unsigned char *cmd);
+
+static int Write_convert_file (Asm_struct *asmst);
+
 
 
 #define Set_num_cmd(code, cmd, shift)       \
@@ -42,16 +46,18 @@ static int Asm_struct_dtor (Asm_struct *asmst);
     }while (0)
 
 
+//======================================================================================
+
 static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
 {
     assert (asmst != nullptr && "asmst is nullptr");
 
-    asmst->code = (unsigned char*) calloc (code_size * 2, sizeof (int));
+    asmst->code = (unsigned char*) calloc (code_size, sizeof (int));
 
-    if (asmst->code == nullptr)
+    if (Check_nullptr (asmst->code))
     {
         Log_report ("Memory was not allocated for the array of commands\n");
-        return ERR_MEMORY_ALLOC;
+        return ST_ASM_CTOR_ERR;
     }
 
     asmst->cnt_bytes = 0;
@@ -62,12 +68,13 @@ static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
     if (asmst->labels == nullptr)
     {
         Log_report ("Memory was not allocated for the array of labels\n");
-        return ERR_MEMORY_ALLOC;
+        return ST_ASM_CTOR_ERR;
     }
 
     return 0;
 }
 
+//======================================================================================
 
 static int Asm_struct_dtor (Asm_struct *asmst)
 {
@@ -77,12 +84,20 @@ static int Asm_struct_dtor (Asm_struct *asmst)
 
     asmst->cnt_labels = -1;
 
-    if (asmst->code   != nullptr) free (asmst->code);
-    if (asmst->labels != nullptr) free (asmst->labels);
+    if (Check_nullptr (asmst->code))
+        Log_report ("Memory has not been allocated yet\n");
+    else
+        free (asmst->code);
+
+    if (Check_nullptr (asmst->labels))
+        Log_report ("An error occurred in stack deconstruction\n");
+    else
+        free (asmst->labels);
 
     return 0;
 }
 
+//======================================================================================
 
 int Convert_operations (int fdin)
 {
@@ -166,38 +181,40 @@ int Convert_operations (int fdin)
     return 0;
 }
 
+//======================================================================================
+
 static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst, 
                                 const int cur_bypass)
 {
     assert (commands_line != nullptr && "commands line is nullptr");
     assert (asmst != nullptr && "asmst is nullptr");
 
-    char cmd[Maxbuf] = {'0'};
     int ip_cmd = 0;
 
     unsigned char *code = asmst->code;
     unsigned char *ptr_beg_code = code;
 
-    for (int ip_line = 0; ip_line < commands_line->cnt_lines; ip_line++)
+    int ip_line = 0;
+
+    while (ip_line < commands_line->cnt_lines)
     {
         char *cur_line = commands_line->lines[ip_line].str;
+        int   cur_len  = commands_line->lines[ip_line].len_str;
 
-        int read_ch = 0;
+        if (cur_len == 0)
+            continue;
 
-        if (sscanf (cur_line, "%s %n", cmd, &read_ch) !=  1)
+        if (cur_line[cur_len - 1] == ':')
         {
-            Log_report ("Incorrect number of elements read\n");
-            return CONVERT_COMMAND_ERR;
-        }
-        
-        if (cmd[0] == ':')
-        {
-            int ip_jump = Find_label (asmst->labels, (cmd + 1), asmst->cnt_labels);
+            char *name_label = commands_line->lines[ip_line].str;
 
-            if (ip_jump == -1)
+            int ip_jump = Find_label (asmst->labels, name_label, asmst->cnt_labels);
+
+            if (ip_jump == Uninit_label)
             {
                 Label_ctor (asmst->labels + asmst->cnt_labels, 
-                            code - ptr_beg_code, (cmd + 1));
+                            code - ptr_beg_code, name_label);
+
                 (asmst->labels + asmst->cnt_labels)->bypass = cur_bypass;
 
                 asmst->cnt_labels++;
@@ -213,17 +230,12 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
             }
         }
 
-        else if (strcmpi (cmd, "jump") == 0) 
+        else if (strcmpi (cur_line, "jump") == 0) 
         {
             Set_num_cmd (code, CMD_JUMP, sizeof (char));
 
-            char name_label[Maxbuf] = {'0'};
-
-            if (sscanf (cur_line + read_ch, "%s", name_label) !=  1)
-            {
-                Log_report ("Incorrect number of elements read\n");
-                return CONVERT_COMMAND_ERR;
-            }
+            ip_line++;
+            char *name_label = commands_line->lines[ip_line].str;
 
             int ip_jump = Find_label (asmst->labels, name_label, asmst->cnt_labels);
 
@@ -232,52 +244,78 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
 
         }
         
-        else if (strcmpi (cmd, "push") == 0)
+        else if (strcmpi (cur_line, "push") == 0)
         {
-            Set_num_cmd (code, CMD_PUSH, sizeof (char));
+            ip_line++;
 
-            int val = 0;
+            unsigned char cmd = CMD_PUSH;
+            int shift = Def_args (commands_line->lines[ip_line].str,
+                        commands_line->lines[ip_line].len_str, code, &cmd);
 
-            if (sscanf (cur_line + read_ch, "%d", &val) != 1)
+            if (shift <= 0)
             {
-                Log_report ("Incorrect number of elements read\n");
+                Log_report ("Argument definition error\n");
+                return CONVERT_COMMAND_ERR;
+            }
+            
+            code += sizeof (char) * shift;
+        }
+
+        else if (strcmpi (cur_line, "pop") == 0)
+        {
+            ip_line++;
+
+            unsigned char cmd = CMD_POP;
+            int shift = Def_args (commands_line->lines[ip_line].str,
+                        commands_line->lines[ip_line].len_str, code, &cmd);
+
+            if (shift <= 0)
+            {
+                Log_report ("Argument definition error\n");
                 return CONVERT_COMMAND_ERR;
             }
 
-            Set_args (code, val, sizeof (int));
-        }
+            if ((cmd & ARG_NUM) && (cmd & ARG_REG) && !(cmd & ARG_RAM)||
+                (cmd & ARG_NUM) && !(cmd & ARG_REG) && !(cmd & ARG_RAM))
+            {
+                Log_report ("Incorrect entry command\n");
+                return CONVERT_COMMAND_ERR;
+            }
+            
+            code += sizeof (char) * shift;
+        }        
         
-        else if (strcmpi (cmd, "add") == 0)
+        else if (strcmpi (cur_line, "add") == 0)
         {
             Set_num_cmd (code, CMD_ADD, sizeof (char));
         }
         
-        else if (strcmpi (cmd, "sub") == 0)
+        else if (strcmpi (cur_line, "sub") == 0)
         {
             Set_num_cmd (code, CMD_SUB, sizeof (char));
         }
         
-        else if (strcmpi (cmd, "mult") == 0)
+        else if (strcmpi (cur_line, "mult") == 0)
         {
             Set_num_cmd (code, CMD_MUT, sizeof (char));
         }
         
-        else if (strcmpi (cmd, "div") == 0)
+        else if (strcmpi (cur_line, "div") == 0)
         {
             Set_num_cmd (code, CMD_DIV, sizeof (char));
         }
         
-        else if (strcmpi (cmd, "out") == 0)
+        else if (strcmpi (cur_line, "out") == 0)
         {
             Set_num_cmd (code, CMD_OUT, sizeof (char));
         }
         
-        else if (strcmpi (cmd, "hlt") == 0)
+        else if (strcmpi (cur_line, "hlt") == 0)
         {
             Set_num_cmd (code, CMD_HLT, sizeof (char));
         }
 
-        else if (strcmpi (cmd, "in") == 0)
+        else if (strcmpi (cur_line, "in") == 0)
         {
             Set_num_cmd (code, CMD_IN, sizeof (char));
         }
@@ -287,12 +325,97 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
             Log_report ("Unknown program entered\n");
             return UNKNOWN_COM_ERR;
         }
-    
-        cmd[0] = '\0';
+
+        ip_line++;
     }
 
     return (code - ptr_beg_code);
 }
+
+//======================================================================================
+
+static int Def_args (char *str, int len_str, unsigned char *code, unsigned char *cmd)
+{
+    assert (str  != nullptr && "string is nullptr");
+    assert (code != nullptr && "code is nullptr");
+
+    int arg_reg = 0, arg_num = 0;
+
+    if (strchr (str, '[') || strchr (str, ']'))
+    {
+        if (str[0] != '[' || str[len_str - 1] != ']')
+        {
+            Log_report ("Incorrect entry command\n");
+            return DEF_ARGS_ERR;
+        }
+
+        for (int ch = 1; ch < len_str - 1; ch++)
+        {
+            if (str[ch] == '[' || str[ch] == ']')
+            {
+                Log_report ("Incorrect entry command\n");
+                return DEF_ARGS_ERR;
+            }
+        }
+
+        *cmd |= ARG_RAM;
+    }
+
+    char *cur_lex = strtok (str, "]+ ");
+    while (cur_lex != nullptr)
+    {
+        if (stricmp (cur_lex, "rax") == 0)
+        {
+            arg_reg = RAX;
+            *cmd |= ARG_REG;
+        }
+
+        else if (stricmp (cur_lex, "rbx") == 0)
+        {
+            arg_reg = RBX;
+            *cmd |= ARG_REG;
+        }
+
+        else if (stricmp (cur_lex, "rcx") == 0)
+        {
+            arg_reg = RCX;
+            *cmd |= ARG_REG;
+        }
+
+        else if (stricmp (cur_lex, "rdx") == 0)
+        {
+            arg_reg = RDX;
+            *cmd |= ARG_REG;
+        }
+        else {
+            arg_num = atoi(cur_lex);
+            *cmd |= ARG_NUM;
+        }
+
+        cur_lex = strtok(nullptr, "]+ ");
+    }
+
+    int shift = 0;
+
+    Set_num_cmd (code, *cmd, sizeof (char));
+    shift += sizeof (char);
+
+    if (*cmd & ARG_NUM)
+    {
+        Set_args (code, arg_num, sizeof (int));
+        shift += sizeof (int);
+    }  
+
+    if (*cmd & ARG_REG)
+    {
+        Set_num_cmd (code, arg_reg, sizeof (char));
+        shift += sizeof (char);
+    }
+
+    return shift;
+}
+
+//======================================================================================
 
 static int Write_convert_file (Asm_struct *asmst)
 {
@@ -322,3 +445,5 @@ static int Write_convert_file (Asm_struct *asmst)
     
     return 0;
 }
+
+//======================================================================================

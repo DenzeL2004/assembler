@@ -3,7 +3,11 @@
 
 #include <string.h>
 
+
 const int Max_cnt_labels = 50;
+
+const int Uninit_label = -1;
+
 
 enum Bypass_number
 {
@@ -11,10 +15,12 @@ enum Bypass_number
     SECOND  = 2,
 };
 
+
 enum Label_err
 {
     REDEF_LABEL_ERR = -1,
 };
+
 
 struct Label 
 {
@@ -23,6 +29,7 @@ struct Label
     
     int bypass = 0; 
 };
+
 
 int Label_ctor (Label *label, const int ip_cmd, const char *name);
 
