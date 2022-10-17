@@ -26,10 +26,10 @@ static int Asm_struct_dtor (Asm_struct *asmst);
 static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst, 
                                 const int cur_bypass);
 
-static int Def_args (char *str, int len_str, unsigned char *code, 
+static int Def_args (const char *str_args, int len_str, unsigned char *code, 
                                              unsigned char *cmd);
 
-static int Write_convert_file (Asm_struct *asmst);
+static int Write_convert_file (const Asm_struct *asmst);
 
 
 
@@ -152,7 +152,6 @@ int Convert_operations (int fdin)
         return CONVERT_COMMAND_ERR;
     }
 
-
     if (Write_convert_file (&asmst))
     {
         Log_report ("An error occurred while writing to the output file\n");
@@ -200,13 +199,17 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
     {
         char *cur_line = commands_line->lines[ip_line].str;
         int   cur_len  = commands_line->lines[ip_line].len_str;
-
+        
         if (cur_len == 0)
+        {
+            ip_line++;
             continue;
+        }
 
         if (cur_line[cur_len - 1] == ':')
         {
             char *name_label = commands_line->lines[ip_line].str;
+            name_label [cur_len - 1] = '\0';
 
             int ip_jump = Find_label (asmst->labels, name_label, asmst->cnt_labels);
 
@@ -228,6 +231,8 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
                     return REDEF_LABEL_ERR;
                 }
             }
+
+            name_label [cur_len - 1] = ':';
         }
 
         else if (strcmpi (cur_line, "jump") == 0) 
@@ -268,7 +273,7 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
             unsigned char cmd = CMD_POP;
             int shift = Def_args (commands_line->lines[ip_line].str,
                         commands_line->lines[ip_line].len_str, code, &cmd);
-
+            
             if (shift <= 0)
             {
                 Log_report ("Argument definition error\n");
@@ -334,12 +339,17 @@ static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst,
 
 //======================================================================================
 
-static int Def_args (char *str, int len_str, unsigned char *code, unsigned char *cmd)
+static int Def_args (const char *str_args, const int len_str, unsigned char *code, unsigned char *cmd)
 {
-    assert (str  != nullptr && "string is nullptr");
+    assert (str_args  != nullptr && "string is nullptr");
     assert (code != nullptr && "code is nullptr");
 
-    int arg_reg = 0, arg_num = 0;
+    char str[len_str + 1] = {};
+    if (!strncpy (str, str_args, len_str))
+    {
+        Log_report ("string copy failure\n");
+        return DEF_ARGS_ERR;
+    }
 
     if (strchr (str, '[') || strchr (str, ']'))
     {
@@ -361,7 +371,9 @@ static int Def_args (char *str, int len_str, unsigned char *code, unsigned char 
         *cmd |= ARG_RAM;
     }
 
-    char *cur_lex = strtok (str, "]+ ");
+    int arg_reg = 0, arg_num = 0;
+
+    char *cur_lex = strtok (str, "[]+ ");
     while (cur_lex != nullptr)
     {
         if (stricmp (cur_lex, "rax") == 0)
@@ -387,9 +399,21 @@ static int Def_args (char *str, int len_str, unsigned char *code, unsigned char 
             arg_reg = RDX;
             *cmd |= ARG_REG;
         }
-        else {
-            arg_num = atoi(cur_lex);
-            *cmd |= ARG_NUM;
+        
+        else 
+        {
+            if (Check_num (cur_lex))    
+            {
+                arg_num = atoi(cur_lex);
+                *cmd |= ARG_NUM;
+            }
+
+            else
+            {
+                Log_report ("Incorrect entry command\n");
+                return DEF_ARGS_ERR; 
+            }
+            
         }
 
         cur_lex = strtok(nullptr, "]+ ");
@@ -417,7 +441,7 @@ static int Def_args (char *str, int len_str, unsigned char *code, unsigned char 
 
 //======================================================================================
 
-static int Write_convert_file (Asm_struct *asmst)
+static int Write_convert_file (const Asm_struct *asmst)
 {
     assert (asmst != nullptr && "asmst is nullptr");
 
@@ -430,13 +454,14 @@ static int Write_convert_file (Asm_struct *asmst)
     }
 
 
-    write (fdout, &Sig, sizeof (Sig));
-    write (fdout, &Ver, sizeof (Ver)); 
+    write (fdout, &Sig, sizeof (int));
+
+    write (fdout, &Ver, sizeof (int)); 
 
     write (fdout, &(asmst->cnt_bytes), sizeof(int));
 
-    write (fdout, asmst->code, sizeof (char) * asmst->cnt_bytes);
-    
+    write (fdout, asmst->code, sizeof (unsigned char) * asmst->cnt_bytes);
+
     if (close (fdout))
     {
         Log_report ("Converted file did't close");

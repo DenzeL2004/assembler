@@ -51,9 +51,9 @@ enum Assembler_commands
     CMD_JL      = 13,
     CMD_JM      = 14,
 
-    CMD_POP    = 16,
+    CMD_POP     = 15,
 
-    CMD_OUT     = 17,
+    CMD_OUT     = 16,
 };
 
 

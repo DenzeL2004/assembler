@@ -21,10 +21,7 @@ static int Cpu_struct_ctor (Cpu_struct *cpu);
 
 static int Cpu_struct_dtor (Cpu_struct *cpu);
 
-static int Init_cpu_ram    (Cpu_struct *cpu);
-
 static int Init_cpu        (Cpu_struct *cpu, int fdin);
-
 
 static int Comands_exe (Cpu_struct *cpu);
 
@@ -66,8 +63,10 @@ static int Cpu_struct_ctor (Cpu_struct *cpu)
 
 static int Cpu_struct_dtor (Cpu_struct *cpu)
 {
+    assert (cpu != nullptr && "cpu is nullptr");
+
     if (Check_nullptr (cpu->code))
-        Log_report ("Memory has not been allocated yet\n");
+        Log_report ("Memory has not been allocated for CODE yet\n");
     else
         free (cpu->code);
 
@@ -77,7 +76,7 @@ static int Cpu_struct_dtor (Cpu_struct *cpu)
     cpu->cur_cmd = -1;
 
     if (Check_nullptr (cpu->ram))
-        Log_report ("Memory has not been allocated yet\n");
+        Log_report ("Memory has not been allocated for RAM yet\n");
     else
         free (cpu->ram);
 
@@ -109,7 +108,7 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
 
     int read_byte = read (fdin, &bin_file, sizeof (Bin_file));
 
-    if (read_byte < 0)
+    if (read_byte <= 0)
     {
         Log_report ("function read outputs a negative number\n");
         return PROCESS_ERR;
@@ -121,16 +120,24 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
         return PROCESS_ERR;
     }
 
-    read (fdin, cpu, sizeof (int));
+    read (fdin, &cpu->cnt_bytes, sizeof (int));
 
-    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes, sizeof (char));
+    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes, sizeof (unsigned char));
+    
+    read_byte = read (fdin, cpu->code, file_stat.st_size);
 
-    read_byte = read (fdin, cpu->code, file_stat.st_size - sizeof (Bin_file) + sizeof (int));
-
-    if (read_byte < 0)
+    if (read_byte <= 0)
     {
         Log_report ("function read outputs a negative number\n");
         return PROCESS_ERR;
+    }
+
+    cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
+
+    if (Check_nullptr (cpu->ram))
+    {
+        Log_report ("An error occurred while allocating memory for the processor\n");
+        return NOT_ALLOC_PTR;
     }
 
     return 0;
@@ -179,6 +186,7 @@ int Run_proc (int fdin)
         return PROCESS_ERR;
     }
 
+
     if (Comands_exe (&cpu))
     {
         Log_report ("command processing failed\n");
@@ -209,7 +217,6 @@ static int Comands_exe (Cpu_struct *cpu)
 
     unsigned char *code = cpu->code;
     unsigned char *ptr_beg_code = code;
-
 
     while (code - ptr_beg_code < cpu->cnt_bytes)
     {
@@ -253,7 +260,7 @@ static int Comands_exe (Cpu_struct *cpu)
                         arg = cpu->ram[arg];
                     else
                     {
-                        Log_report ("accessing unallocated memory\n");
+                        Log_report ("Accessing unallocated memory\n");
                         return PROCESS_COM_ERR;
                     }
                 }
@@ -262,36 +269,70 @@ static int Comands_exe (Cpu_struct *cpu)
             }
                 break;
 
-            /*case CMD_POP:
+
+            case CMD_POP:
             {
                 elem val = 0;
                 Stack_pop (&cpu->stack, &val);
 
-                elem arg = 0; 
+                int arg = 0;
 
-                if (cmd & ARG_NUM)
+                if (cmd & ARG_RAM)
                 {
-                    arg  += *(int*) code;
-                    code += sizeof (int); 
-                }  
+                    if (cmd & ARG_NUM)
+                    {
+                        arg  += *(int*) code;
+                        code += sizeof (int); 
+                    }  
+
+                    if (cmd & ARG_REG)
+                    {
+                        arg  += cpu->regs[*code];
+                        code += sizeof (char); 
+                    }
+
+                    if (arg < Ram_size)
+                        cpu->ram[arg] = val;
+                    else
+                    {
+                        Log_report ("Accessing unallocated RAM memory\n");
+                        return PROCESS_COM_ERR;
+                    }
+                    
+                    break;
+                }
 
                 if (cmd & ARG_REG)
                 {
-                    arg  += cpu->regs[*code];
-                    code += sizeof (char); 
+                    arg  += *code;
+                    code += sizeof (char);
 
-                    if (cmd & ARG_RAM)
+                    if (cmd & ARG_NUM)
                     {
-                        if (arg < Cnt_reg)
-                            cpu->ram[arg] = val;
-                        else
-                            Log_report ("Accessing unallocated memory\n");
+                        Log_report ("Incorrect command entry\n");
+                        return PROCESS_COM_ERR;
                     }
 
+                    if (arg < Cnt_reg)
+                        cpu->regs[arg] = val;
+                    else
+                    {
+                        Log_report ("Accessing unallocated REG memory\n");
+                        return PROCESS_COM_ERR;
+                    }
+
+                    break;
                 }
-                
+
+                if (cmd & ARG_NUM)
+                {
+                    Log_report ("Incorrect command entry\n");
+                    return PROCESS_COM_ERR;
+                }
+
             }
-                break;*/
+                break;
+
 
             case CMD_IN:
             {
@@ -338,6 +379,7 @@ static int Comands_exe (Cpu_struct *cpu)
             }
                 break;
 
+
             case CMD_DIV:
             {
                 elem val1 = 0, val2 = 0;
@@ -348,6 +390,7 @@ static int Comands_exe (Cpu_struct *cpu)
             }
                 break;
 
+
             case CMD_OUT:
             {
                 elem val = 0;
@@ -356,58 +399,20 @@ static int Comands_exe (Cpu_struct *cpu)
                 printf ("last val stack %" USE_TYPE "\n", val);
                 break;
             }
-                
+
+
             case CMD_HLT:
             {
                 return 0;
             }
             
+
             default:
                 Log_report ("Unknown command\n");
                 return PROCESS_ERR;
         }
 
         Proc_dump (cpu);
-    }
-
-    return 0;
-}
-
-//======================================================================================
-
-/*static int Get_arg (char cmd, char *code)
-{
-    assert (cpu == nullptr && "cpu is nullptr");
-
-    int arg = 0;
-
-    if (cmd & ARG_NUM)
-    {
-        arg  += *(int*) code;
-        code += sizeof (int); 
-    }    
-
-    if (cmd & ARG_REG)
-    {
-        arg  += *code;
-        code += sizeof (char); 
-    }
-
-    return 0;
-}*/
-
-//======================================================================================
-
-static int Init_cpu_ram (Cpu_struct *cpu)
-{
-    assert (cpu == nullptr && "cpu is nullptr");
-
-    cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
-
-    if (Check_nullptr (cpu->ram))
-    {
-        Log_report ("An error occurred while allocating memory for the processor\n");
-        return NOT_ALLOC_PTR;
     }
 
     return 0;
@@ -438,7 +443,7 @@ static int Proc_dump (Cpu_struct *cpu)
     printf ("\n");
 
     printf (" %*s", (cpu->cur_cmd)*4, "^");
-    printf ("cur_cmd = %d", cpu->code[cpu->cur_cmd]);
+    printf ("cur_cmd = %d", cpu->cur_cmd);
     getc (stdin);
 
     printf ("\n");

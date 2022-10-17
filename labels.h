@@ -25,7 +25,7 @@ enum Label_err
 struct Label 
 {
     int string_code = 0;
-    int ptr_jump   = 0;
+    int ptr_jump    = 0;
     
     int bypass = 0; 
 };
