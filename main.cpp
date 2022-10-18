@@ -12,7 +12,7 @@
 #include <io.h>
 
 #include "assembler.h"
-//#include "proc.h"
+#include "proc.h"
 #include "../Generals_func/generals.h"
 #include "../Logs/log_errors.h"
 
@@ -68,7 +68,7 @@ int main (int argc, char *argv[])
 
     close (fd);
 
-    /*fd = open (Output_file, O_RDONLY, 0);
+    fd = open (Output_file, O_RDONLY, 0);
     if (fd < 0)
     {
         Log_report ("File not opened after assembly\n");
@@ -81,7 +81,7 @@ int main (int argc, char *argv[])
         return -1;
     }
 
-    close (fd);*/
+    close (fd);
 
     #ifdef USE_LOG
         
