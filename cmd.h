@@ -90,15 +90,17 @@ DEF_CMD (OUT , 16, 0, {
 
 DEF_CMD_JUMP (JUMP, 8, *)
 
-DEF_CMD_JUMP (JA ,  9,  >)
+DEF_CMD_JUMP (JA,  9,  >)
 
 DEF_CMD_JUMP (JAE, 10, >=)
 
-DEF_CMD_JUMP (JB , 11,  <)
+DEF_CMD_JUMP (JB, 11,  <)
 
 DEF_CMD_JUMP (JBE, 12, <=)
 
-DEF_CMD_JUMP (JL , 13, ==)
+DEF_CMD_JUMP (JL, 13, ==)
 
-DEF_CMD_JUMP (JM , 14, !=)
+DEF_CMD_JUMP (JM, 14, !=)
+
+DEF_CMD_JUMP (CALL, 17, -)
 

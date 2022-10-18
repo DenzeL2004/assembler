@@ -5,6 +5,10 @@
 #include "assembler_config.h"
 #include "labels.h"
 
+static const char *Name_input_file = "input.txt";
+
+static const char *Name_output_file = "out.bin";
+
 enum Assembler_errors
 {
     CREAT_CONVERT_FILE_ERR = -1,
