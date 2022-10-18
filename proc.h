@@ -3,6 +3,9 @@
 
 #include "../My_stack/stack.h"
 
+const int Ln_ram = 10;
+
+const int Cl_ram = 10;
 
 const int Ram_size = 100;
 

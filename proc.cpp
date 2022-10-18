@@ -36,6 +36,8 @@ static unsigned char *Get_push_arg
 static unsigned char *Get_pop_arg 
 (unsigned char *code, const int cmd, elem val, Cpu_struct *cpu);
 
+static int Show_ram (Cpu_struct *cpu);
+
 //======================================================================================
 
 static int Cpu_struct_ctor (Cpu_struct *cpu)
@@ -191,12 +193,13 @@ int Run_proc (int fdin)
         return PROCESS_ERR;
     }
 
-
     if (Comands_exe (&cpu))
     {
         Log_report ("command processing failed\n");
         return PROCESS_ERR;
     }
+
+    Show_ram (&cpu);
 
     if (Cpu_struct_dtor (&cpu))
     {
@@ -219,7 +222,7 @@ int Run_proc (int fdin)
 #define DEF_CMD_JUMP(name, num, oper, ...)                      \                                       
         case num:                                               \
         {                                                       \
-            if (!strcmpi (#oper, "*")){                         \
+            if (num == CMD_JUMP){                               \
                 code = (ptr_beg_code + *code);                  \
             } else {                                            \
                 elem val1 = 0, val2 = 0;                        \
@@ -420,6 +423,28 @@ static int Proc_dump (Cpu_struct *cpu)
 
     printf ("\n");
     printf ("============================================\n\n");
+
+    return 0;
+}
+
+//======================================================================================
+
+static int Show_ram (Cpu_struct *cpu)
+{
+    assert (cpu != nullptr && "cpu is nullptr");
+
+    for (int ln = 0; ln < Ln_ram; ln++)
+    {
+        for (int cl = 0; cl < Cl_ram; cl++)
+        {
+            int adress = ln * Cl_ram + cl;
+
+            if (cpu->ram[adress]) Print_colour (GREEN, "*");
+            else                  Print_colour (RED, "*");
+        }
+
+        printf ("\n");
+    }
 
     return 0;
 }
