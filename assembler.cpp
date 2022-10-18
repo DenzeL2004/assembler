@@ -14,7 +14,6 @@
 #include "assembler.h"
 
 
-
 static FILE *fp_logs = stderr;
 
 
@@ -26,11 +25,9 @@ static int Asm_struct_dtor (Asm_struct *asmst);
 static int Get_convert_command (Text_info *commands_line, Asm_struct *asmst, 
                                 const int cur_bypass);
 
-static int Def_args (const char *str_args, int len_str, unsigned char *code, 
-                                             unsigned char *cmd);
+static int Def_args (const char *str_args, const int len_str, unsigned char *code, unsigned char *cmd);
 
 static int Write_convert_file (const Asm_struct *asmst, const char *output_file);
-
 
 
 #define Set_num_cmd(code, cmd, shift)       \

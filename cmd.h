@@ -68,8 +68,8 @@ DEF_CMD (DIV , 6, 0, {
 DEF_CMD (POP , 15, 1, {
     elem val = 0;
     Stack_pop (&cpu->stack, &val);
-
-    code = Get_pop_arg (code, cmd, val, cpu);
+    
+    code = Set_pop_arg (code, cmd, val, cpu);
 
     if (code == nullptr)
     {
@@ -88,7 +88,9 @@ DEF_CMD (OUT , 16, 0, {
     printf ("last val stack %" USE_TYPE "\n", val);
 })
 
-DEF_CMD_JUMP (JUMP, 8, *)
+DEF_CMD_JUMP (JUMP, 8, *, {
+    code = (ptr_beg_code + *code);
+})
 
 DEF_CMD_JUMP (JA,  9,  >)
 
@@ -102,5 +104,20 @@ DEF_CMD_JUMP (JL, 13, ==)
 
 DEF_CMD_JUMP (JM, 14, !=)
 
-DEF_CMD_JUMP (CALL, 17, -)
+DEF_CMD_JUMP (CALL, 17, *, {
+    
+    Stack_push (&cpu->stack, (code - ptr_beg_code));
+    code = (ptr_beg_code + *code);
+
+})
+
+DEF_CMD (RET , 18, 0, {
+
+    int ip_jump = 0;
+    Stack_pop (&cpu->stack, &ip_jump);
+    
+    code = (ptr_beg_code + ip_jump);
+
+    code += sizeof (int);
+})
 

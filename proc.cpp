@@ -33,7 +33,7 @@ static int Proc_dump (Cpu_struct *cpu);
 static unsigned char *Get_push_arg 
 (unsigned char *code, const int cmd, elem *arg, const Cpu_struct *cpu);
 
-static unsigned char *Get_pop_arg 
+static unsigned char *Set_pop_arg 
 (unsigned char *code, const int cmd, elem val, Cpu_struct *cpu);
 
 static int Show_ram (Cpu_struct *cpu);
@@ -222,15 +222,12 @@ int Run_proc (int fdin)
 #define DEF_CMD_JUMP(name, num, oper, ...)                      \                                       
         case num:                                               \
         {                                                       \
-            if (num == CMD_JUMP){                               \
-                code = (ptr_beg_code + *code);                  \
+            if (num == CMD_JUMP || num == CMD_CALL){            \
+                __VA_ARGS__                                     \
             } else {                                            \
                 elem val1 = 0, val2 = 0;                        \
                 Stack_pop  (&cpu->stack, &val1);                \
                 Stack_pop  (&cpu->stack, &val2);                \
-                                                                \
-                Stack_push (&cpu->stack, val2);                 \
-                Stack_push (&cpu->stack, val1);                 \
                                                                 \
                 if (val1 oper val2)                             \
                     code = (ptr_beg_code + *code);              \                              
@@ -271,7 +268,7 @@ static int Comands_exe (Cpu_struct *cpu)
                 return PROCESS_ERR;
         }
 
-        Proc_dump (cpu);
+       // Proc_dump (cpu);
     }
 
     return 0;
@@ -325,7 +322,7 @@ static unsigned char *Get_push_arg
 
 //======================================================================================
 
-static unsigned char *Get_pop_arg 
+static unsigned char *Set_pop_arg 
         (unsigned char *code, const int cmd, elem val, Cpu_struct *cpu)
 {
     assert (code != nullptr && "code is nullptr");
@@ -372,7 +369,7 @@ static unsigned char *Get_pop_arg
             Log_report ("Incorrect command entry\n");
             return nullptr;
         }
-
+       
         if (arg < Cnt_reg)
             cpu->regs[arg] = val;
         else
