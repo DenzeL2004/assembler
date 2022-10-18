@@ -7,7 +7,9 @@ static const int Ver = 1;
 
 static const int Sig = 'D' * 256 + 'K';
 
-static const char *name_output_file = "out.bin";
+static const char *Name_input_file = "input.txt";
+
+static const char *Name_output_file = "out.bin";
 
 static const int Cnt_reg = 4;
 

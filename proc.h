@@ -10,6 +10,8 @@ const int Min_stack_size = 5;
 
 const char Cmd_mask = (1 << 5) - 1;
 
+const int Program_delay = 1;
+
 enum Processor_err
 {
     PROC_CTOR_ERR            = -1,

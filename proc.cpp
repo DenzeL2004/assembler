@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 
 #include "proc.h"
@@ -29,7 +30,11 @@ static int Check_header (Bin_file *Bin_file);
 
 static int Proc_dump (Cpu_struct *cpu);
 
+static unsigned char *Get_push_arg 
+(unsigned char *code, const int cmd, elem *arg, const Cpu_struct *cpu);
 
+static unsigned char *Get_pop_arg 
+(unsigned char *code, const int cmd, elem val, Cpu_struct *cpu);
 
 //======================================================================================
 
@@ -211,6 +216,34 @@ int Run_proc (int fdin)
 
 //======================================================================================
 
+#define DEF_CMD_JUMP(name, num, oper, ...)                      \                                       
+        case num:                                               \
+        {                                                       \
+            if (!strcmpi (#oper, "*")){                         \
+                code = (ptr_beg_code + *code);                  \
+            } else {                                            \
+                elem val1 = 0, val2 = 0;                        \
+                Stack_pop  (&cpu->stack, &val1);                \
+                Stack_pop  (&cpu->stack, &val2);                \
+                                                                \
+                Stack_push (&cpu->stack, val2);                 \
+                Stack_push (&cpu->stack, val1);                 \
+                                                                \
+                if (val1 oper val2)                             \
+                    code = (ptr_beg_code + *code);              \                              
+                else                                            \
+                    code += sizeof (int);                       \
+            }                                                   \
+            break;                                              \
+        }                                                       
+
+#define DEF_CMD(name, num, arg, ...)                            \                                       
+        case num:                                               \
+        {                                                       \
+            __VA_ARGS__                                         \
+            break;                                              \
+        }                                                       
+
 static int Comands_exe (Cpu_struct *cpu)
 {
     assert (cpu != nullptr && "cpu is nullptr");    
@@ -222,190 +255,13 @@ static int Comands_exe (Cpu_struct *cpu)
     {
         cpu->cur_cmd = code - ptr_beg_code;
 
-        char cmd = *code;
+        unsigned char cmd = *code;
+        
         code++;
-
+ 
         switch (cmd & Cmd_mask)
         {   
-            case CMD_JUMP:
-                code = (ptr_beg_code + *code);
-                break;
-
-            case CMD_PUSH:
-            {
-                elem arg = 0;
-
-                if (cmd & ARG_NUM)
-                {
-                    arg  += *(int*) code;
-                    code += sizeof (int); 
-                }    
-
-                if (cmd & ARG_REG)
-                {
-                    if (*code < Cnt_reg)
-                        arg  += cpu->regs[*code];
-                    else
-                    {
-                        Log_report ("Accessing unallocated memory\n");
-                        return PROCESS_COM_ERR;
-                    }
-
-                    code += sizeof (char); 
-                }
-
-                if (cmd & ARG_RAM)
-                {
-                    if (arg < Ram_size && arg >= 0)
-                        arg = cpu->ram[arg];
-                    else
-                    {
-                        Log_report ("Accessing unallocated memory\n");
-                        return PROCESS_COM_ERR;
-                    }
-                }
-                
-                Stack_push (&cpu->stack, arg);
-            }
-                break;
-
-
-            case CMD_POP:
-            {
-                elem val = 0;
-                Stack_pop (&cpu->stack, &val);
-
-                int arg = 0;
-
-                if (cmd & ARG_RAM)
-                {
-                    if (cmd & ARG_NUM)
-                    {
-                        arg  += *(int*) code;
-                        code += sizeof (int); 
-                    }  
-
-                    if (cmd & ARG_REG)
-                    {
-                        arg  += cpu->regs[*code];
-                        code += sizeof (char); 
-                    }
-
-                    if (arg < Ram_size)
-                        cpu->ram[arg] = val;
-                    else
-                    {
-                        Log_report ("Accessing unallocated RAM memory\n");
-                        return PROCESS_COM_ERR;
-                    }
-                    
-                    break;
-                }
-
-                if (cmd & ARG_REG)
-                {
-                    arg  += *code;
-                    code += sizeof (char);
-
-                    if (cmd & ARG_NUM)
-                    {
-                        Log_report ("Incorrect command entry\n");
-                        return PROCESS_COM_ERR;
-                    }
-
-                    if (arg < Cnt_reg)
-                        cpu->regs[arg] = val;
-                    else
-                    {
-                        Log_report ("Accessing unallocated REG memory\n");
-                        return PROCESS_COM_ERR;
-                    }
-
-                    break;
-                }
-
-                if (cmd & ARG_NUM)
-                {
-                    Log_report ("Incorrect command entry\n");
-                    return PROCESS_COM_ERR;
-                }
-
-            }
-                break;
-
-
-            case CMD_IN:
-            {
-                elem val = 0;
-                
-                scanf ("%" USE_TYPE, &val);
-                
-                Stack_push (&cpu->stack, val);
-                
-                code++;
-            }
-                break;
-            
-
-            case CMD_ADD:
-            {
-                elem val1 = 0, val2 = 0;
-                Stack_pop (&cpu->stack, &val1);
-                Stack_pop (&cpu->stack, &val2);
-
-                Stack_push (&cpu->stack, val1 + val2);
-            }
-                break;
-            
-
-            case CMD_MUT:
-            {
-                elem val1 = 0, val2 = 0;
-                Stack_pop (&cpu->stack, &val1);
-                Stack_pop (&cpu->stack, &val2);
-
-                Stack_push (&cpu->stack, val1 * val2);
-            }    
-                break;
-            
-
-            case CMD_SUB:
-            {
-                elem val1 = 0, val2 = 0;
-                Stack_pop (&cpu->stack, &val1);
-                Stack_pop (&cpu->stack, &val2);
-
-                Stack_push (&cpu->stack, val1 - val2);
-            }
-                break;
-
-
-            case CMD_DIV:
-            {
-                elem val1 = 0, val2 = 0;
-                Stack_pop (&cpu->stack, &val1);
-                Stack_pop (&cpu->stack, &val2);
-
-                Stack_push (&cpu->stack, val1 / val2);
-            }
-                break;
-
-
-            case CMD_OUT:
-            {
-                elem val = 0;
-                Stack_pop (&cpu->stack, &val);
-
-                printf ("last val stack %" USE_TYPE "\n", val);
-                break;
-            }
-
-
-            case CMD_HLT:
-            {
-                return 0;
-            }
-            
+            #include "cmd.h"
 
             default:
                 Log_report ("Unknown command\n");
@@ -416,6 +272,122 @@ static int Comands_exe (Cpu_struct *cpu)
     }
 
     return 0;
+}
+
+#undef DEF_CMD 
+#undef DEF_CMD_JUMP
+//======================================================================================
+
+static unsigned char *Get_push_arg 
+        (unsigned char *code, const int cmd, elem *arg, const Cpu_struct *cpu)
+{
+    assert (code != nullptr && "code is nullptr");
+    assert (cpu  != nullptr && "cpu is nullptr");
+    
+    if (cmd & ARG_NUM)
+    {
+        *arg  += *(int*) code;
+        code += sizeof (int); 
+    }    
+
+    if (cmd & ARG_REG)
+    {
+        if (*code < Cnt_reg)
+            *arg  += cpu->regs[*code];
+        else
+        {
+            Log_report ("Accessing unallocated memory\n");
+            return nullptr;
+        }
+
+        code += sizeof (char); 
+    }
+
+    if (cmd & ARG_RAM)
+    {
+        if (*arg < Ram_size && *arg >= 0)
+        {
+            *arg = cpu->ram[*arg];
+            sleep (Program_delay);
+        }
+        else
+        {
+            Log_report ("Accessing unallocated memory\n");
+            return nullptr;
+        }
+    }
+
+    return code;
+}
+
+//======================================================================================
+
+static unsigned char *Get_pop_arg 
+        (unsigned char *code, const int cmd, elem val, Cpu_struct *cpu)
+{
+    assert (code != nullptr && "code is nullptr");
+    assert (cpu  != nullptr && "cpu is nullptr");
+
+    int arg = 0;
+
+    if (cmd & ARG_RAM)
+    {
+        if (cmd & ARG_NUM)
+        {
+            arg  += *(int*) code;
+            code += sizeof (int); 
+        }  
+
+        if (cmd & ARG_REG)
+        {
+            arg  += cpu->regs[*code];
+            code += sizeof (char); 
+        }
+
+        if (arg < Ram_size)
+        {
+            cpu->ram[arg] = val;
+            sleep (Program_delay);
+        }
+
+        else
+        {
+            Log_report ("Accessing unallocated RAM memory\n");
+            return nullptr;
+        }
+        
+        return code;
+    }
+
+    if (cmd & ARG_REG)
+    {
+        arg  += *code;
+        code += sizeof (char);
+
+        if (cmd & ARG_NUM)
+        {
+            Log_report ("Incorrect command entry\n");
+            return nullptr;
+        }
+
+        if (arg < Cnt_reg)
+            cpu->regs[arg] = val;
+        else
+        {
+            Log_report ("Accessing unallocated REG memory\n");
+            return nullptr;
+        }
+
+        return code;;
+    }
+
+    if (cmd & ARG_NUM)
+    {
+        Log_report ("Incorrect command entry\n");
+        return nullptr;
+    }
+
+    return nullptr;
 }
 
 //======================================================================================

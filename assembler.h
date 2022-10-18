@@ -28,33 +28,19 @@ enum Assembler_errors
     FREE_BUF_ERR           = -8, 
 };
 
+#define DEF_CMD(name, num, ...)      \
+    CMD_##name = (num),
+
+#define DEF_CMD_JUMP(name, num, ...) \
+    CMD_##name = (num),
+
 enum Assembler_commands
 {
-    CMD_HLT     = 0,
-
-    CMD_PUSH    = 1,
-    CMD_IN      = 2,
-
-    CMD_ADD     = 3,
-    CMD_SUB     = 4, 
-    CMD_MUT     = 5,
-    CMD_DIV     = 6,
-    
-    CMD_LABLE   = 7,
-
-    CMD_JUMP    = 8,
-
-    CMD_JA      = 9, 
-    CMD_JAE     = 10,
-    CMD_JB      = 11,
-    CMD_JBE     = 12,
-    CMD_JL      = 13,
-    CMD_JM      = 14,
-
-    CMD_POP     = 15,
-
-    CMD_OUT     = 16,
+    #include "cmd.h"
 };
+
+#undef DEF_CMD
+#undef DEF_CMD_JUMP
 
 
 struct Asm_struct
@@ -70,6 +56,6 @@ struct Asm_struct
 const int Maxbuf = 20;
 
 
-int Convert_operations (int fdin);
+int Convert_operations (int fdin, const char *output_file);
 
 #endif  //#endif _ASSEMBLER_H_
