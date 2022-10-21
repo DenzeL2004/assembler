@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "dsl.h"
+
 #include "src/process_text/process_text.h"
 #include "src/Generals_func/generals.h"
 #include "src/log_info/log_errors.h"
@@ -24,20 +26,20 @@ static int Asm_struct_dtor (Asm_struct *asmst);
 static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst, 
                                 const int cur_bypass);
 
-static int Def_args (const char *str_args, const int len_str, unsigned char *code, unsigned char cmd);
+static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst, unsigned char cmd);
 
 static int Write_convert_file (const Asm_struct *asmst, const char *output_file);
 
 
 #define Set_num_cmd(code, cmd, shift)       \
     do{                                     \
-        *code = cmd;                        \
+        *code  = cmd;                        \
          code += shift;                     \                              
     }while (0)
 
 #define Set_args(code, args, shift)         \
     do{                                     \
-        *(elem*) code = args;               \
+        *(elem*) code  = args;               \
                  code += shift;             \         
     }while (0)
 
@@ -58,9 +60,9 @@ static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
 {
     assert (asmst != nullptr && "asmst is nullptr");
 
-    asmst->code = (unsigned char*) calloc (code_size, sizeof (elem));
+    ASM_CODE = (unsigned char*) calloc (code_size, sizeof (elem));
 
-    if (Check_nullptr (asmst->code))
+    if (Check_nullptr (ASM_CODE))
     {
         Log_report ("Memory was not allocated for the array of commands\n");
         return ST_ASM_CTOR_ERR;
@@ -88,6 +90,7 @@ static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
 
 #undef DEF_CMD
 #undef DEF_CMD_JUMP
+
 //======================================================================================
 
 
@@ -97,10 +100,10 @@ static int Asm_struct_dtor (Asm_struct *asmst)
 
     asmst->cnt_bytes = -1;
 
-    if (Check_nullptr (asmst->code))
+    if (Check_nullptr (ASM_CODE))
         Log_report ("Memory has not been allocated yet\n");
     else
-        free (asmst->code);
+        free (ASM_CODE);
 
     if (Check_nullptr (asmst->labels))
         Log_report ("An error occurred in stack deconstruction\n");
@@ -208,13 +211,12 @@ int Convert_operations (int fdin, const char *output_file)
             if (arg == 1){                                                                      \
                 ip_line++;                                                                      \
                                                                                                 \                                                      
-                int shift = Def_args (commands_line->lines[ip_line].str,                        \
-                            commands_line->lines[ip_line].len_str, code, (unsigned char)num);   \
+                Def_args (commands_line->lines[ip_line].str,                        \
+                          commands_line->lines[ip_line].len_str, asmst, (unsigned char)num);   \
                                                                                                 \   
-                code += sizeof (char) * shift;                                                  \
                                                                                                 \
             } else                                                                              \
-                Set_num_cmd (code, num, sizeof (char));                                         \
+                Set_num_cmd (ASM_CODE, num, sizeof (char));                                         \
         }                                                                                       \  
         else                                                                                  
 
@@ -223,7 +225,7 @@ int Convert_operations (int fdin, const char *output_file)
                                                                                                         \                                      
         if (strcmpi (cur_line, #name) == 0)                                                             \
         {                                                                                               \
-            Set_num_cmd (code, num, sizeof (char));                                                     \
+            Set_num_cmd (ASM_CODE, num, sizeof (char));                                                     \
                                                                                                         \
             ip_line++;                                                                                  \                                                                      
             char *name_label = commands_line->lines[ip_line].str;                                       \
@@ -243,9 +245,9 @@ int Convert_operations (int fdin, const char *output_file)
             }                                                                                           \
                                                                                                         \       
             if (ip_jump == Not_init_label)                                                              \
-                Set_args (code, ip_jump, sizeof (elem));                                                 \
+                Set_args (ASM_CODE, ip_jump, sizeof (elem));                                         \
             else                                                                                        \
-                Set_args (code, (asmst->labels + ip_jump)->ptr_jump, sizeof (elem));                     \
+                Set_args (ASM_CODE, (asmst->labels + ip_jump)->ptr_jump, sizeof (elem));             \
         }                                                                                               \                                                                                       
         else              
 
@@ -255,8 +257,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
     assert (commands_line != nullptr && "commands line is nullptr");
     assert (asmst != nullptr && "asmst is nullptr");
 
-    unsigned char *code = asmst->code;
-    unsigned char *ptr_beg_code = code;
+    unsigned char *ptr_beg_code = ASM_CODE;
 
     int ip_line = 0;
 
@@ -270,6 +271,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
             ip_line++;
             continue;
         }
+
 
         if (cur_line[cur_len - 1] == ':')
         {
@@ -295,7 +297,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
                     }
 
                 Label_init (asmst->labels + asmst->cnt_labels, 
-                            code - ptr_beg_code, name_label, cur_bypass);
+                            ASM_CODE - ptr_beg_code, name_label, cur_bypass);
 
                 asmst->cnt_labels++;
             }
@@ -304,7 +306,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
             {
                 if ((asmst->labels + ip_jump)->bypass == cur_bypass)
                 {
-                    Log_report ("Redefining the label\n");
+                    Log_report ("Redefining the label: %s\n", name_label);
                     return REDEF_LABEL_ERR;
                 }
             }
@@ -318,7 +320,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
         
         /*else*/
         {
-            Log_report ("Unknown program entered\n");
+            Log_report ("Unknown program entered: %s\n", cur_line);
             return UNKNOWN_COM_ERR;
         }
 
@@ -327,17 +329,25 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
     
     
 
-    return (code - ptr_beg_code);
+   /*for (int i = 0; i < ASM_CODE - ptr_beg_code; i++)
+        printf ("%d ", *(ptr_beg_code + i));
+    printf ("\n");*/
+
+    asmst->cnt_bytes = ASM_CODE-ptr_beg_code;
+    ASM_CODE = ptr_beg_code;
+
+    return asmst->cnt_bytes;
 }
 
 #undef DEF_CMD
 #undef DEF_CMD_JUMP
+
 //======================================================================================
 
-static int Def_args (const char *str_args, const int len_str, unsigned char *code, unsigned char cmd)
+static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst, unsigned char cmd)
 {
     assert (str_args  != nullptr && "string is nullptr");
-    assert (code != nullptr && "code is nullptr");
+    assert (asmst     != nullptr && "asmst  is nullptr");
 
     char str[len_str + 1] = {};
     if (!strncpy (str, str_args, len_str))
@@ -397,30 +407,19 @@ static int Def_args (const char *str_args, const int len_str, unsigned char *cod
         cur_lex = strtok(nullptr, "]+ ");
     }
 
-    int shift = 0;
-
-    Set_num_cmd (code, cmd, sizeof (char));
-    shift += sizeof (char);
+    Set_num_cmd (ASM_CODE, cmd, sizeof (char));
 
     if (cmd & ARG_IMM)
     {
-        Set_args (code, arg_num, sizeof (elem));
-        shift += sizeof (elem);
+        Set_args (ASM_CODE, arg_num, sizeof (elem));
     }  
 
     if (cmd & ARG_REG)
     {
-        Set_num_cmd (code, arg_reg, sizeof (char));
-        shift += sizeof (char);
-    }
-
-    if (shift <= 0)                                                                 
-    {                                                                               
-        Log_report ("Argument definition error\n");                                 
-        return CONVERT_COMMAND_ERR;                                                 
+        Set_num_cmd (ASM_CODE, arg_reg, sizeof (char));
     }
     
-    return shift;
+    return 0;
 }
 
 //======================================================================================
@@ -437,14 +436,28 @@ static int Write_convert_file (const Asm_struct *asmst, const char *output_file)
         return CREAT_CONVERT_FILE_ERR;
     }
 
+    int bytes_written = 0, size_file = 0;
 
-    write (fdout, &Sig, sizeof (int));
+    bytes_written += write (fdout, &Sig, sizeof (int));
+    size_file     += sizeof (int);
 
-    write (fdout, &Ver, sizeof (int)); 
+    bytes_written += write (fdout, &Ver, sizeof (int)); 
+    size_file     += sizeof (int);
 
-    write (fdout, &(asmst->cnt_bytes), sizeof(int));
+    bytes_written += write (fdout, &(asmst->cnt_bytes), sizeof(int));
+    size_file     += sizeof (int);
 
-    write (fdout, asmst->code, sizeof (unsigned char) * asmst->cnt_bytes);
+    bytes_written += write (fdout, ASM_CODE, 
+                            sizeof (unsigned char) * asmst->cnt_bytes);
+    size_file     += sizeof (unsigned char) * asmst->cnt_bytes;
+
+    if (size_file != bytes_written)
+    {
+        Log_report ("Error writing to binary file\n"
+                    "size_file = %d\nbytes_written = %d\n", 
+                     size_file,      bytes_written);
+        return CREAT_CONVERT_FILE_ERR;
+    }    
 
     if (close (fdout))
     {

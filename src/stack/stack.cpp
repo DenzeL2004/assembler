@@ -6,7 +6,7 @@
 #include <time.h>
 #include <assert.h>
 
-#include "Generals_func\generals.h"
+#include "..\Generals_func\generals.h"
 #include "log_errors.h"
 #include "log_def.h"
 #include "config.h"

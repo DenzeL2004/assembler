@@ -5,9 +5,11 @@
 
 typedef int elem;
 
+
 #define USE_LOG  //<- connect when we use logs
 
 #define DEBUG    //<- Use of protection
+
 
 #ifdef DEBUG
 
@@ -23,11 +25,13 @@ typedef int elem;
 
 #endif
 
+
 const elem POISON_VAL = 228;       //<- fill stack with poisonous value
 
 const elem POISON_PTR = 4242564;   //<- fill pointer with poison value
 
 const elem NOT_ALLOC_PTR = 666666; //<- fill in the value of the pointer to which we are going to allocate dynamic memory
+
 
 #define USE_TYPE "d"               //<- specifier character to print elem
 

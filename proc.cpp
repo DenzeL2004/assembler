@@ -10,10 +10,11 @@
 #include "src/log_info/log_errors.h"
 #include "src/stack/stack.h"
 
-#include "proc.h"
+#include "dsl.h"
 
-#include "assembler.h"
+#include "proc.h"
 #include "architecture.h"
+#include "assembler.h"
 
 
 FILE *fp_logs = stderr;
@@ -27,7 +28,7 @@ static int Init_cpu        (Cpu_struct *cpu, int fdin);
 
 static int Comands_exe (Cpu_struct *cpu);
 
-static int Check_header (Bin_file *Bin_file);
+static int Check_header (Cpu_struct *cpu);
 
 static int Proc_dump (Cpu_struct *cpu);
 
@@ -112,45 +113,26 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
         return READ_FROM_BIN_ERR;
     }
 
-    Bin_file bin_file = {};
+    cpu->code = (unsigned char*) calloc (file_stat.st_size, sizeof (unsigned char));
 
-    int read_byte = read (fdin, &bin_file, sizeof (Bin_file));
+    int read_byte = read (fdin, cpu->code, file_stat.st_size);
 
-    if (read_byte <= 0)
+    if (read_byte != read_byte)
     {
-        Log_report ("function read outputs a negative number\n");
+        Log_report ("function read outputs a negative number bin file\n");
         return READ_FROM_BIN_ERR;
     }
 
-    if (Check_header (&bin_file))
+    
+    if (Check_header (cpu))
     {
         Log_report ("File headers did not match constants\n");
         return READ_FROM_BIN_ERR;
     }
 
 
-    read (fdin, &cpu->cnt_bytes, sizeof (int));
-    if (read_byte <= 0)
-    {
-        Log_report ("function read outputs a negative number\n");
-        return READ_FROM_BIN_ERR;
-    }
-
-
-    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes, sizeof (unsigned char));
-    if (Check_nullptr (cpu->code))
-    {
-        Log_report ("Memory allocation error\n");
-        return ERR_MEMORY_ALLOC;
-    }
-
-
-    read_byte = read (fdin, cpu->code, file_stat.st_size);
-    if (read_byte <= 0)
-    {
-        Log_report ("function read outputs a negative number\n");
-        return READ_FROM_BIN_ERR;
-    }
+    cpu->cnt_bytes = *(int*) cpu->code;
+    cpu->code += sizeof (int);
 
 
     cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
@@ -165,17 +147,26 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
 
 //======================================================================================
 
-static int Check_header (Bin_file *bin_file)
+static int Check_header (Cpu_struct *cpu)
 {
-    assert (bin_file != nullptr && "File info is nullptr");
+    assert (cpu != nullptr && "cpu is is nullptr");
 
-    if (bin_file->signature != Sig)
+    Bin_file bin_file = {};
+
+    bin_file.signature = *(int*) cpu->code;
+    cpu->code += sizeof (int);
+
+    bin_file.asm_version = *(int*) cpu->code;
+    cpu->code += sizeof (int);
+
+
+    if (bin_file.signature != Sig)
     {
         Log_report ("Assemblers signature did't match the processor\n");
         return SIGNATURE_MISMATCH_ERR;
     }
 
-    if (bin_file->asm_version != Ver)
+    if (bin_file.asm_version != Ver)
     {
         Log_report ("Assemblers version did't match the processor\n");
         return VERSION_MISMATCH_ERR;
@@ -212,7 +203,6 @@ int Run_proc (int fdin)
         return PROCESS_ERR;
     }
 
-    Show_ram (&cpu);
 
     if (Cpu_struct_dtor (&cpu))
     {
@@ -239,13 +229,13 @@ int Run_proc (int fdin)
                 __VA_ARGS__                                     \
             } else {                                            \
                 elem val1 = 0, val2 = 0;                        \
-                Stack_pop  (&cpu->stack, &val1);                \
-                Stack_pop  (&cpu->stack, &val2);                \
+                GET_LAST_VAL (val1);                           \
+                GET_LAST_VAL (val2);                           \
                                                                 \
                 if (val1 oper val2)                             \
-                    code = (ptr_beg_code + *code);              \                              
+                    code = (ptr_beg_code + *(int*) code);       \                              
                 else                                            \
-                    code += sizeof (int);                       \
+                    code += sizeof (elem);                       \
             }                                                   \
             break;                                              \
         }                                                       
@@ -269,19 +259,25 @@ static int Comands_exe (Cpu_struct *cpu)
         cpu->cur_cmd = code - ptr_beg_code;
 
         unsigned char cmd = *code;
-        
+
         code++;
- 
+
+       // printf ("%d\n", cmd);
+
         switch (cmd & Cmd_mask)
         {   
             #include "cmd.h"
 
             default:
-                Log_report ("Unknown command\n");
+                Log_report ("Unknown command: %d\n", cmd);
                 return PROCESS_ERR;
         }
 
-       // Proc_dump (cpu);
+        #ifdef USE_PROC_DUMP
+
+           Proc_dump (cpu);
+        
+        #endif
     }
 
     return 0;
@@ -289,6 +285,7 @@ static int Comands_exe (Cpu_struct *cpu)
 
 #undef DEF_CMD 
 #undef DEF_CMD_JUMP
+
 //======================================================================================
 
 static unsigned char *Get_push_arg 
@@ -321,7 +318,7 @@ static unsigned char *Get_push_arg
         if (*arg < Ram_size && *arg >= 0)
         {
             *arg = cpu->ram[(int) *arg];
-            sleep (Program_delay);
+            usleep (Program_delay);
         }
         else
         {
@@ -353,14 +350,15 @@ static unsigned char *Set_pop_arg
 
         if (cmd & ARG_REG)
         {
-            arg  += cpu->regs[*(int*)code];
+            arg  += cpu->regs[*(int*) code];
             code += sizeof (char); 
         }
+
 
         if (arg < Ram_size)
         {
             cpu->ram[arg] = val;
-            sleep (Program_delay);
+            usleep (Program_delay);
         }
 
         else
@@ -428,7 +426,7 @@ static int Proc_dump (Cpu_struct *cpu)
     printf ("\n");
 
     printf (" %*s", (cpu->cur_cmd)*4, "^");
-    printf ("cur_cmd = %d", cpu->cur_cmd);
+    printf ("cur_cmd = %d", cpu->code[cpu->cur_cmd]);
     getc (stdin);
 
     printf ("\n");

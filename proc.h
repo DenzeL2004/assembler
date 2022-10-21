@@ -14,7 +14,7 @@ const int Min_stack_size = 5;
 
 const char Cmd_mask = (1 << 5) - 1;
 
-const int Program_delay = 1;
+const int Program_delay = 300;
 
 enum Processor_err
 {
@@ -49,6 +49,10 @@ struct  Cpu_struct
     Stack stack = {};    
 };
 
+
+//#define USE_PROC_DUMP
+
 int Run_proc (int fdin);
+
 
 #endif //#endif _PROC_H_

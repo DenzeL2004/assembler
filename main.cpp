@@ -1,20 +1,8 @@
 #include <stdio.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <ctype.h> 
-#include <sys/stat.h>
-#include <io.h>
 
-#include "assembler.h"
-#include "proc.h"
-#include "../Generals_func/generals.h"
-#include "../Logs/log_errors.h"
+#include "src/log_info/log_errors.h"
 
 
 static FILE *fp_logs = stderr;
@@ -31,21 +19,22 @@ int main (int argc, char *argv[])
 
     #endif 
 
-    char *Input_file  = (char*) Name_input_file;
-    char *Output_file = (char*) Name_output_file;
+    char *input_file  = "";
+    char *output_file = "";
 
     switch (argc)
     {
         case 1:
-            break;
+            Log_report ("Input file not specified\n");
+            return -1;
         
         case 2:
-            Input_file = argv[1];
+            input_file = argv[1];
             break;
 
         case 3:
-            Input_file  = argv[1];
-            Output_file = argv[2];
+            input_file  = argv[1];
+            output_file = argv[2];
             break;
         
         default:
@@ -53,35 +42,46 @@ int main (int argc, char *argv[])
             return -1;
     }
 
-    int fd = open (Input_file, O_RDONLY, 0);
-    if (fd < 0)
+    char *input_assembler_argv = strdup ("assembler.exe ");
+    strcat(input_assembler_argv, input_file);
+    strcat(input_assembler_argv, output_file);
+
+    //printf ("%s\n", input_assembler_argv);
+
+    if (!input_assembler_argv)
     {
-        Log_report ("Input file not opened\n");
+        Log_report ("Error copying command line arguments in assembler\n");
+        return -1;
+    }
+    
+   // int d = system (input_assembler_argv);
+    //printf ("%d\n", d);
+    if (system (input_assembler_argv))
+    {
+        Log_report ("Assembler execution failed\n");
         return -1;
     }
 
-    if (Convert_operations (fd, Output_file))
-    {
-        Log_report ("Assembler error\n");
-        return -1; 
-    }
+    
+    char *input_cpu_argv = strdup ("proc.exe ");
+    strcat("", output_file);
 
-    close (fd);
-
-    fd = open (Output_file, O_RDONLY, 0);
-    if (fd < 0)
+    if (!input_cpu_argv)
     {
-        Log_report ("File not opened after assembly\n");
+        Log_report ("Error copying command line arguments in proc\n");
         return -1;
     }
 
-    if (Run_proc (fd))
+    printf ("%s\n", input_cpu_argv);
+
+    if (system (input_cpu_argv))
     {
-        Log_report ("Processor error\n");
+        Log_report ("CPU execution failed\n");
         return -1;
     }
 
-    close (fd);
+    free (input_assembler_argv);
+    free (input_cpu_argv);
 
     #ifdef USE_LOG
         

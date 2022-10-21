@@ -1,5 +1,5 @@
-#ifndef _ASM_CONFIG_H_
-#define _ASM_CONFIG_H_
+#ifndef _ARCHITECTURE_H_
+#define _ARCHITECTURE_H_
 
 typedef int elem;
 
@@ -33,4 +33,4 @@ enum Regs
 
 
 
-#endif //#endif _ASM_CONFIG_H_
+#endif //#endif _ARCHITECTURE_H_

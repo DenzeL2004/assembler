@@ -29,5 +29,3 @@ DEF_REG (N, 13)
 DEF_REG (O, 14)
 
 DEF_REG (P, 15)
-
-

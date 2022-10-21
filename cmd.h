@@ -1,20 +1,20 @@
 DEF_CMD (HLT, 0, 0, {
-    code = (ptr_beg_code + cpu->cnt_bytes);
+    CPU_CODE = (ptr_beg_code + cpu->cnt_bytes);
 })
 
 DEF_CMD (PUSH, 1, 1, {
 
     elem arg = 0;
 
-    code = Get_push_arg (code, cmd, &arg, cpu);
+    CPU_CODE = Get_push_arg (CPU_CODE, cmd, &arg, CPU);
 
-    if (code == nullptr)
+    if (Check_nullptr (CPU_CODE))
     {
         Log_report ("Error in getting arguments in the push function\n");
         return PROCESS_COM_ERR; 
     }
 
-    Stack_push (&cpu->stack, arg);
+    SET_VAL (arg);
 })
 
 DEF_CMD (IN , 2, 0, {
@@ -26,52 +26,61 @@ DEF_CMD (IN , 2, 0, {
         return PROCESS_COM_ERR;
     }
     
-    Stack_push (&cpu->stack, val);
+    SET_VAL (val);
 })
 
 DEF_CMD (ADD , 3, 0, {
 
     elem val1 = 0, val2 = 0;
-    Stack_pop (&cpu->stack, &val1);
-    Stack_pop (&cpu->stack, &val2);
+    GET_LAST_VAL (val1);
+    GET_LAST_VAL (val2);
 
-    Stack_push (&cpu->stack, val1 + val2);
+    SET_VAL (val1 + val2);
 })
 
 DEF_CMD (SUB, 4, 0, {
     
     elem val1 = 0, val2 = 0;
-    Stack_pop (&cpu->stack, &val1);
-    Stack_pop (&cpu->stack, &val2);
+    GET_LAST_VAL (val1);
+    GET_LAST_VAL (val2);
 
-    Stack_push (&cpu->stack, val1 - val2);
+    SET_VAL (val1 - val2);
 })
 
 DEF_CMD (MULT, 5, 0, {
     
     elem val1 = 0, val2 = 0;
-    Stack_pop (&cpu->stack, &val1);
-    Stack_pop (&cpu->stack, &val2);
+    GET_LAST_VAL (val1);
+    GET_LAST_VAL (val2);
 
-    Stack_push (&cpu->stack, val1 * val2);
+    SET_VAL (val1 * val2);
 })
 
 DEF_CMD (DIV , 6, 0, {
 
     elem val1 = 0, val2 = 0;
-    Stack_pop (&cpu->stack, &val1);
-    Stack_pop (&cpu->stack, &val2);
+    GET_LAST_VAL (val1);
+    GET_LAST_VAL (val2);
 
-    Stack_push (&cpu->stack, val1 / val2);
+    SET_VAL (val1 / val2);
+})
+
+DEF_CMD (SQRT , 7, 1, {
+    elem val = 0;
+    GET_LAST_VAL (val);
+    
+    
+    val = (elem) sqrt (val);
+    SET_VAL (val);
 })
 
 DEF_CMD (POP , 15, 1, {
     elem val = 0;
-    Stack_pop (&cpu->stack, &val);
+    GET_LAST_VAL(val);
     
-    code = Set_pop_arg (code, cmd, val, cpu);
+    CPU_CODE = Set_pop_arg (CPU_CODE, cmd, val, CPU);
 
-    if (code == nullptr)
+    if (Check_nullptr (CPU_CODE))
     {
         Log_report ("Error in getting arguments in the pop function\n");
         return PROCESS_COM_ERR; 
@@ -83,13 +92,13 @@ DEF_CMD (POP , 15, 1, {
 DEF_CMD (OUT , 16, 0, {
 
     elem val = 0;
-    Stack_pop (&cpu->stack, &val);
+    GET_LAST_VAL (val);
 
     printf ("last val stack %" USE_TYPE "\n", val);
 })
 
 DEF_CMD_JUMP (JUMP, 8, *, {
-    code = (ptr_beg_code + *code);
+    CPU_CODE = (ptr_beg_code + *CPU_CODE);
 })
 
 DEF_CMD_JUMP (JA,  9,  >)
@@ -106,17 +115,33 @@ DEF_CMD_JUMP (JM, 14, !=)
 
 DEF_CMD_JUMP (CALL, 17, *, {
     
-    Stack_push (&cpu->stack, (code - ptr_beg_code));
-    code = (ptr_beg_code + *code);
+    SET_VAL ((elem) (CPU_CODE - ptr_beg_code));
+    CPU_CODE = (ptr_beg_code + *(int*) CPU_CODE);
 
 })
 
 DEF_CMD (RET , 18, 0, {
 
-    int ip_jump = 0;
-    Stack_pop (&cpu->stack, &ip_jump);
+    elem ip_jump = 0;
+    GET_LAST_VAL (ip_jump);
     
-    code = (ptr_beg_code + ip_jump);
+    CPU_CODE = (ptr_beg_code + (int) ip_jump);
 
-    code += sizeof (int);
+    CPU_CODE += sizeof (elem);
 })
+
+DEF_CMD (DUP , 20, 0, {
+    elem val = 0;
+
+    GET_LAST_VAL (val);
+    
+    SET_VAL (val);
+    SET_VAL (val);   
+})
+
+
+DEF_CMD (SHOWRAM , 19, 0, {
+       Show_ram (CPU);
+})
+
+
