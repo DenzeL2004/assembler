@@ -2,12 +2,8 @@
 #define _ASSEMBLER_H_
 
 
-#include "assembler_config.h"
+#include "architecture.h"
 #include "labels.h"
-
-static const char *Name_input_file = "input.txt";
-
-static const char *Name_output_file = "out.bin";
 
 enum Assembler_errors
 {
@@ -38,6 +34,7 @@ enum Assembler_errors
 #define DEF_CMD_JUMP(name, num, ...) \
     CMD_##name = (num),
 
+
 enum Assembler_commands
 {
     #include "cmd.h"
@@ -53,11 +50,11 @@ struct Asm_struct
     unsigned char *code = nullptr;
 
     int cnt_labels = 0;
+    int label_capacity = 0;
     Label* labels = nullptr;
+
+    unsigned int cmd_code_tabel[Max_cnt_cmd];
 };
-
-
-const int Maxbuf = 20;
 
 
 int Convert_operations (int fdin, const char *output_file);

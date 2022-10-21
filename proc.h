@@ -1,13 +1,14 @@
 #ifndef _PROC_H_
 #define _PROC_H_
 
-#include "../My_stack/stack.h"
+#include "src/stack/stack.h"
+#include "architecture.h"
 
-const int Ln_ram = 10;
+const int Ln_ram = 20;
 
-const int Cl_ram = 10;
+const int Cl_ram = 20;
 
-const int Ram_size = 100;
+const int Ram_size = 400;
 
 const int Min_stack_size = 5;
 
@@ -17,14 +18,16 @@ const int Program_delay = 1;
 
 enum Processor_err
 {
-    PROC_CTOR_ERR            = -1,
-    PROC_DTOR_ERR            = -2,
+    PROC_CTOR_ERR           = -1,
+    PROC_DTOR_ERR           = -2,
     
     VERSION_MISMATCH_ERR    = -3,
     SIGNATURE_MISMATCH_ERR  = -4,
 
     PROCESS_ERR             = -5,
     PROCESS_COM_ERR         = -6,
+
+    READ_FROM_BIN_ERR       =-7,
 };
 
 struct Bin_file 
@@ -39,7 +42,7 @@ struct  Cpu_struct
     unsigned char *code = nullptr;
 
     int cur_cmd = 0;
-    elem regs[4] = {0};
+    elem regs[Cnt_reg] = {0};
 
     elem *ram = nullptr;
 

@@ -6,13 +6,14 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "src/Generals_func/generals.h"
+#include "src/log_info/log_errors.h"
+#include "src/stack/stack.h"
+
 #include "proc.h"
-#include "../Generals_func/generals.h"
-#include "../Logs/log_errors.h"
-#include "../My_stack/stack.h"
 
 #include "assembler.h"
-#include "assembler_config.h"
+#include "architecture.h"
 
 
 FILE *fp_logs = stderr;
@@ -108,7 +109,7 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
     if (fstat (fdin, &file_stat))
     {
         Log_report ("Unsuccessful memory extraction\n");
-        return PROCESS_ERR;
+        return READ_FROM_BIN_ERR;
     }
 
     Bin_file bin_file = {};
@@ -118,29 +119,41 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
     if (read_byte <= 0)
     {
         Log_report ("function read outputs a negative number\n");
-        return PROCESS_ERR;
+        return READ_FROM_BIN_ERR;
     }
 
     if (Check_header (&bin_file))
     {
         Log_report ("File headers did not match constants\n");
-        return PROCESS_ERR;
+        return READ_FROM_BIN_ERR;
     }
 
+
     read (fdin, &cpu->cnt_bytes, sizeof (int));
-
-    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes, sizeof (unsigned char));
-    
-    read_byte = read (fdin, cpu->code, file_stat.st_size);
-
     if (read_byte <= 0)
     {
         Log_report ("function read outputs a negative number\n");
-        return PROCESS_ERR;
+        return READ_FROM_BIN_ERR;
     }
 
-    cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
 
+    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes, sizeof (unsigned char));
+    if (Check_nullptr (cpu->code))
+    {
+        Log_report ("Memory allocation error\n");
+        return ERR_MEMORY_ALLOC;
+    }
+
+
+    read_byte = read (fdin, cpu->code, file_stat.st_size);
+    if (read_byte <= 0)
+    {
+        Log_report ("function read outputs a negative number\n");
+        return READ_FROM_BIN_ERR;
+    }
+
+
+    cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
     if (Check_nullptr (cpu->ram))
     {
         Log_report ("An error occurred while allocating memory for the processor\n");
@@ -284,10 +297,10 @@ static unsigned char *Get_push_arg
     assert (code != nullptr && "code is nullptr");
     assert (cpu  != nullptr && "cpu is nullptr");
     
-    if (cmd & ARG_NUM)
+    if (cmd & ARG_IMM)
     {
-        *arg  += *(int*) code;
-        code += sizeof (int); 
+        *arg  += *(elem*) code;
+        code += sizeof (elem); 
     }    
 
     if (cmd & ARG_REG)
@@ -307,7 +320,7 @@ static unsigned char *Get_push_arg
     {
         if (*arg < Ram_size && *arg >= 0)
         {
-            *arg = cpu->ram[*arg];
+            *arg = cpu->ram[(int) *arg];
             sleep (Program_delay);
         }
         else
@@ -332,15 +345,15 @@ static unsigned char *Set_pop_arg
 
     if (cmd & ARG_RAM)
     {
-        if (cmd & ARG_NUM)
+        if (cmd & ARG_IMM)
         {
             arg  += *(int*) code;
-            code += sizeof (int); 
+            code += sizeof (elem); 
         }  
 
         if (cmd & ARG_REG)
         {
-            arg  += cpu->regs[*code];
+            arg  += cpu->regs[*(int*)code];
             code += sizeof (char); 
         }
 
@@ -364,7 +377,7 @@ static unsigned char *Set_pop_arg
         arg  += *code;
         code += sizeof (char);
 
-        if (cmd & ARG_NUM)
+        if (cmd & ARG_IMM)
         {
             Log_report ("Incorrect command entry\n");
             return nullptr;
@@ -381,7 +394,7 @@ static unsigned char *Set_pop_arg
         return code;;
     }
 
-    if (cmd & ARG_NUM)
+    if (cmd & ARG_IMM)
     {
         Log_report ("Incorrect command entry\n");
         return nullptr;
