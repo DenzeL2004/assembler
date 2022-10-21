@@ -326,12 +326,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
 
         ip_line++;
     }
-    
-    
 
-   /*for (int i = 0; i < ASM_CODE - ptr_beg_code; i++)
-        printf ("%d ", *(ptr_beg_code + i));
-    printf ("\n");*/
 
     asmst->cnt_bytes = ASM_CODE-ptr_beg_code;
     ASM_CODE = ptr_beg_code;

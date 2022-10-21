@@ -66,7 +66,5 @@ int main (int argc, char *argv[])
 
     #endif
 
-    printf ("OK");
-
     return 0;
 }

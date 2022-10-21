@@ -262,8 +262,6 @@ static int Comands_exe (Cpu_struct *cpu)
 
         code++;
 
-       // printf ("%d\n", cmd);
-
         switch (cmd & Cmd_mask)
         {   
             #include "cmd.h"
