@@ -12,8 +12,6 @@ const int Ram_size = 400;
 
 const int Min_stack_size = 5;
 
-const char Cmd_mask = (1 << 5) - 1;
-
 const int Program_delay = 300;
 
 enum Processor_err
@@ -27,7 +25,7 @@ enum Processor_err
     PROCESS_ERR             = -5,
     PROCESS_COM_ERR         = -6,
 
-    READ_FROM_BIN_ERR       =-7,
+    READ_FROM_BIN_ERR       = -7,
 };
 
 struct Bin_file 
@@ -50,7 +48,10 @@ struct  Cpu_struct
 };
 
 
-//#define USE_PROC_DUMP
+#define USE_CPU_CODE_DUMP   //<- We write to the log file information by cpu code
+
+#define USE_CPU_REG_DUMP    //<- We write to the log file information by cpu regs
+
 
 int Run_proc (int fdin);
 

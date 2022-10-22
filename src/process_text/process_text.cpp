@@ -7,7 +7,7 @@
 #include <io.h>
 
 #include "../Generals_func/generals.h"
-#include "../Logs/log_errors.h"
+#include "../log_info/log_errors.h"
 
 #include "process_text.h"
 
@@ -25,19 +25,12 @@ static int _Get_count_lines     (const char *buf);
 
 static int _Lines_initialize    (Text_info *text);
 
-static FILE *fp_logs = nullptr;
-
 //======================================================================================
 
 int Text_read (int fdin, Text_info *text)
 {
     assert (fdin >= 0 && "fdin is negative number");
     assert (text != nullptr && "struct Text_info is nullptr");
-
-    fp_logs = fopen ("logs_info.txt", "a");
-
-    if (fp_logs == nullptr)
-        return OPEN_FILE_LOG_ERR;
     
     if (_Work_with_bufer (fdin, text)){
         Log_report ("Buffer initialization error");
@@ -51,7 +44,6 @@ int Text_read (int fdin, Text_info *text)
         return ERR_INIT_LINES;
     }
 
-    fclose (fp_logs);
 
     return 0;
 }

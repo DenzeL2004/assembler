@@ -13,15 +13,13 @@ int main (int argc, char *argv[])
 {
     #ifdef USE_LOG
         
-        fp_logs = Open_logs_file ();
-        
-        if (fp_logs == stderr)
+        if (Open_logs_file ())
             return OPEN_FILE_LOG_ERR;
 
     #endif 
 
     char *input_file  = nullptr;
-    char *output_file = (char*) Name_output_file;
+    char *output_file = (char*) Default_name_output_file;
 
     switch (argc)
     {
@@ -61,7 +59,7 @@ int main (int argc, char *argv[])
 
     #ifdef USE_LOG
         
-        if (Close_logs_file (fp_logs))
+        if (Close_logs_file ())
             return CLOSE_FILE_LOG_ERR;
 
     #endif

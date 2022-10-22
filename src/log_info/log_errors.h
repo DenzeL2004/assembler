@@ -13,25 +13,13 @@ enum Log_errors
 
 #define USE_LOG
 
-#ifdef USE_LOG
-
-    #define USE_LOG_REPORT
-
-#endif
 
 #ifdef USE_LOG
 
-    #ifdef USE_LOG_REPORT
         
-        #define Log_report(...)                            \
-                Log_report_ (LOG_ARGS, fp_logs, __VA_ARGS__)
+    #define Log_report(...)                            \
+        Log_report_ (LOG_ARGS, __VA_ARGS__)
 
-    #else
-
-        #define Log_report(...)                            \
-            Err_report_ (LOG_ARGS, fp_logs)
-    
-    #endif
 
 #else
 
@@ -39,12 +27,21 @@ enum Log_errors
 
 #endif
 
-FILE* Open_logs_file  ();
+#define Err_report()                            \
+        Err_report_ (LOG_ARGS)
 
-int Close_logs_file (FILE* fp_logs);
 
-int Log_report_ (LOG_PARAMETS, FILE *fp_logs, const char *format, ...);
 
-int Err_report_ (const char* file_name, const char* func_name, int line, FILE *fp_logs);
 
-#endif
+int Open_logs_file ();
+
+int Close_logs_file ();
+
+FILE *Get_log_file_ptr ();
+
+int Log_report_ (LOG_PARAMETS, const char *format, ...);
+
+int Err_report_ (LOG_PARAMETS);
+
+
+#endif // #endif _LOG_ERRORS_H_

@@ -5,29 +5,31 @@
 #include "log_errors.h"
 #include "..\Generals_func\generals.h"
 
+static FILE *fp_logs = stderr;
+
 //=======================================================================================================
 
-FILE* Open_logs_file ()
+int Open_logs_file ()
 {    
-    FILE* fp_logs = Open_file_ptr ("logs_info.txt", "a");
+    fp_logs = Open_file_ptr ("logs_info.txt", "a");
+
+    if (!fp_logs)
+    {
+        fprintf (stderr, "Logs file does not open\n");
+        return 0;
+    }
 
     time_t seconds = time (NULL)  + 3 * 60* 60;;   
 
     fprintf (fp_logs, "\n----------------------------------------------------\n");
-    fprintf (fp_logs, "Time open logs file: %s\n\n", asctime(gmtime(&seconds))); 
-    
-    if (!fp_logs)
-    {
-        fprintf (stderr, "Logs file does not open\n");
-        return nullptr;
-    }
+    fprintf (fp_logs, "Time open logs file: %s\n\n", asctime(gmtime(&seconds)));
 
-    return fp_logs;
+    return 0;
 }
 
 //=======================================================================================================
 
-int Log_report_ (const char* file_name, const char* func_name, int line, FILE *fp_logs, const char *format, ...) 
+int Log_report_ (const char* file_name, const char* func_name, int line, const char *format, ...) 
 { 
     fprintf (fp_logs, "=================================================\n\n");
 
@@ -52,28 +54,34 @@ int Log_report_ (const char* file_name, const char* func_name, int line, FILE *f
 
 //=======================================================================================================
 
-int Err_report_ (const char* file_name, const char* func_name, int line, FILE *fp_logs) 
+int Err_report_ (const char* file_name, const char* func_name, int line) 
 { 
 
-    fprintf (fp_logs, "ERROR IN: ");
+    fprintf (stderr, "||ERROR ERROR ERROR||\n");
 
-    fprintf (fp_logs, "In file %s ", file_name);
-    fprintf (fp_logs, "In function %s ", func_name);
-    fprintf (fp_logs, "In line %d\n", line);
-
-
+    fprintf (stderr, "In file %s, ", file_name);
+    fprintf (stderr, "In function %s, ", func_name);
+    fprintf (stderr, "In line %d\n\n", line);
+    
     return 0;                                                       
 }
 
 //=======================================================================================================
 
-int Close_logs_file (FILE *fp_logs)
+FILE *Get_log_file_ptr ()
+{
+    return fp_logs;
+}
+
+//=======================================================================================================
+
+int Close_logs_file ()
 {
     time_t seconds = time (NULL)  + 3 * 60* 60;;   
 
     fprintf (fp_logs, "\n----------------------------------------------------\n");
-    fprintf (fp_logs, "Time close logs file: %s\n\n", asctime(gmtime(&seconds))); 
-
+    fprintf (fp_logs, "Time close logs file: %s\n\n", asctime(gmtime(&seconds)));
+    
     if (Close_file_ptr (fp_logs))
     {
         fprintf (stderr, "Logs file does not close\n");

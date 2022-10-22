@@ -7,16 +7,10 @@
 #include "src/log_info/log_errors.h"
 
 
-static FILE *fp_logs = stderr;
-
-
 int main (int argc, char *argv[])
 {
     #ifdef USE_LOG
-        
-        fp_logs = Open_logs_file ();
-        
-        if (fp_logs == stderr)
+        if (Open_logs_file ())
             return OPEN_FILE_LOG_ERR;
 
     #endif 
@@ -59,7 +53,7 @@ int main (int argc, char *argv[])
 
     #ifdef USE_LOG
         
-        if (Close_logs_file (fp_logs))
+        if (Close_logs_file ())
             return CLOSE_FILE_LOG_ERR;
 
     #endif

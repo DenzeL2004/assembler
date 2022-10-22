@@ -34,16 +34,29 @@ struct Label
     int bypass = 0; 
 };
 
-int Check_reserved_name (const char *name_new_label, const unsigned int *cmd_code);
+struct Label_table
+{
+    int cnt_labels = 0;
+    int label_capacity = 0;
+    
+    Label* labels = nullptr;
+};
 
-int Check_cnt_labels (int cur_cnt_labels, int capacity_labels);
-
-int Recalloc_cnt_labels (Label *labels, int *label_capacity);
 
 int Label_init (Label *label, const int ip_cmd, const char *name, const int bypass);
 
-int Find_label (const Label *labels, const char *name_new_label, const int cnt_labels);
+int Check_reserved_name (const char *name_new_label, const unsigned int *cmd_code);
 
-unsigned int Get_str_code (const char *str);
+int Check_cnt_labels (Label_table *label_table);
+
+int Recalloc_cnt_labels (Label_table *label_table);
+
+int Find_label (Label_table *label_table, const char *name_new_label);
+
+unsigned int Get_str_hash (const char *str);
+
+int Ctor_label_tabel (Label_table *label_table);
+
+int Dtor_label_tabel (Label_table *label_table);
 
 #endif //#endif _LABELS_H_

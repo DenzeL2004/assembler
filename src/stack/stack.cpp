@@ -6,95 +6,96 @@
 #include <time.h>
 #include <assert.h>
 
-#include "..\Generals_func\generals.h"
-#include "log_errors.h"
-#include "log_def.h"
-#include "config.h"
 #include "stack.h"
 
-#define Stack_info_ctor(stack_info)                       \
-        Stack_info_ctor_ (stack_info, LOG_VAR, fp_logs)
+#include "../log_info/log_errors.h"
+#include "../Generals_func/generals.h"
 
-static int Stack_info_ctor_  (Stack_info *stack_info, LOG_PARAMETS, FILE *fp_logs);
+
+
+#define Stack_info_ctor(stack_info)                       \
+        Stack_info_ctor_ (stack_info, LOG_VAR)
+
+static int Stack_info_ctor_  (Stack_info *stack_info, LOG_PARAMETS);
 
 #define Stack_info_dtor(stack_info)                       \
-        Stack_info_dtor_ (stack_info, fp_logs)
+        Stack_info_dtor_ (stack_info)
 
-static int Stack_info_dtor_  (Stack_info *stack_info, FILE *fp_logs);
+static int Stack_info_dtor_  (Stack_info *stack_info);
 
 #ifdef HASH
 
     #define Stack_hash_save(stack)                        \
-        Stack_hash_save_ (stack, fp_logs)
+        Stack_hash_save_ (stack)
 #else
 
     #define Stack_hash_save(stack)                        \
 
 #endif
 
-static int Stack_hash_save_         (Stack *stack, FILE *fp_logs);
+static int Stack_hash_save_         (Stack *stack);
 
 #define Check_hash_data(stack)                            \
-        Check_hash_data_ (stack, fp_logs)
+        Check_hash_data_ (stack)
 
-static int Check_hash_data_   (const Stack *stack, FILE *fp_logs);
+static int Check_hash_data_   (const Stack *stack);
 
 #define Check_hash_struct(stack)                          \
-        Check_hash_struct_ (stack, fp_logs)
+        Check_hash_struct_ (stack)
 
-static int Check_hash_struct_ (const Stack *stack, FILE *fp_logs);
+static int Check_hash_struct_ (const Stack *stack);
 
 #ifdef CANARY_PROTECT
 
     #define Stack_canaries_set(stack)                        \
-        Stack_canaries_set_ (stack, fp_logs)
+        Stack_canaries_set_ (stack)
 #else
 
     #define Stack_canaries_set(stack)                        \
 
 #endif
 
-static int Stack_canaries_set_ (Stack* stack, FILE *fp_logs);
+static int Stack_canaries_set_ (Stack* stack);
 
 #define Stack_vals_poison_set(stack)                      \
-        Stack_vals_poison_set_ (stack, fp_logs)
+        Stack_vals_poison_set_ (stack)
 
-static int Stack_vals_poison_set_   (Stack *stack, FILE *fp_logs);
+static int Stack_vals_poison_set_   (Stack *stack);
 
 #define Stack_preparing(stack)                      \
-        Stack_preparing_ (stack, fp_logs)
+        Stack_preparing_ (stack)
 
-static int Stack_preparing_ (Stack *stack,  FILE *fp_logs);
+static int Stack_preparing_ (Stack *stack);
 
 #define Recalloc_stack(stack)                              \
-        Recalloc_stack_ (stack, fp_logs)
+        Recalloc_stack_ (stack)
 
-static int Recalloc_stack_ (Stack *stack, FILE *fp_logs);
+static int Recalloc_stack_ (Stack *stack);
 
 #define Check_resize(stack)                              \
-        Check_resize_ (stack, fp_logs)
+        Check_resize_ (stack)
 
-static int Check_resize_ (Stack *stack, FILE *fp_logs);
+static int Check_resize_ (Stack *stack);
 
 #define Stack_resize(stack, param)                              \
-        Stack_resize_ (stack, param, fp_logs)
+        Stack_resize_ (stack, param)
 
-static int Stack_resize_ (Stack *stack, const int param, FILE *fp_logs);
+static int Stack_resize_ (Stack *stack, const int param);
 
 #define Check_stack_data_ptr(stack)                       \
-        Check_stack_data_ptr_ (stack, fp_logs)
+        Check_stack_data_ptr_ (stack)
 
-static int Check_stack_data_ptr_ (Stack *stack, FILE *fp_logs);
+static int Check_stack_data_ptr_ (Stack *stack);
 
 #define Stack_check(stack)                                \
-        Stack_check_ (stack, fp_logs)
+        Stack_check_ (stack)
 
-static uint64_t Stack_check_     (Stack *stack, FILE *fp_logs);
+static uint64_t Stack_check_     (Stack *stack);
 
 //=======================================================================================================
 
 int Stack_ctor_ (Stack *stack, long capacity, 
-                 const char* file_name, const char* func_name, const int line, FILE *fp_logs)
+                 const char* file_name, const char* func_name, const int line)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -130,7 +131,7 @@ int Stack_ctor_ (Stack *stack, long capacity,
 
 //=======================================================================================================
 
-int Stack_dtor_ (Stack *stack, FILE* fp_logs)
+int Stack_dtor_ (Stack *stack)
 {   
     assert (stack != nullptr && "stack is nullptr");
 
@@ -173,7 +174,7 @@ int Stack_dtor_ (Stack *stack, FILE* fp_logs)
 //=======================================================================================================
 
 static int Stack_info_ctor_ (Stack_info *stack_info, 
-                             const char* file_name, const char* func_name, int line, FILE *fp_logs) 
+                             const char* file_name, const char* func_name, int line) 
 {
     assert (stack_info != nullptr && "stack_info is nullptr");
 
@@ -186,7 +187,7 @@ static int Stack_info_ctor_ (Stack_info *stack_info,
 
 //=======================================================================================================
 
-static int Stack_info_dtor_ (Stack_info *stack_info, FILE *fp_logs) 
+static int Stack_info_dtor_ (Stack_info *stack_info) 
 {
     assert (stack_info != nullptr && "stack_info is nullptr");
     assert (stack_info->origin_file != nullptr && "stack_info->origin_file is nullptr");
@@ -205,7 +206,7 @@ static int Stack_info_dtor_ (Stack_info *stack_info, FILE *fp_logs)
 
 #ifdef HASH
 
-static int Stack_hash_save_ (Stack *stack, FILE *fp_logs)
+static int Stack_hash_save_ (Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -215,7 +216,7 @@ static int Stack_hash_save_ (Stack *stack, FILE *fp_logs)
         size_struct -= sizeof (uint64_t);
     #endif
 
-    stack->hash_struct = Get_hash ((char*) stack, size_struct);
+    stack->hash_struct = Get_hash ((const char*) stack, size_struct);
 
     if (stack->capacity <= 0)
     {
@@ -225,7 +226,7 @@ static int Stack_hash_save_ (Stack *stack, FILE *fp_logs)
 
     size_t size_data = stack->capacity * sizeof (elem);
 
-    stack->hash_data = Get_hash ((char*) stack->data, size_data);
+    stack->hash_data = Get_hash ((const char*) stack->data, size_data);
 
     return 0;
 }
@@ -236,7 +237,7 @@ static int Stack_hash_save_ (Stack *stack, FILE *fp_logs)
 
 #ifdef HASH
 
-static int Check_hash_data_ (const Stack *stack, FILE *fp_logs)
+static int Check_hash_data_ (const Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -262,7 +263,7 @@ static int Check_hash_data_ (const Stack *stack, FILE *fp_logs)
 
 #ifdef HASH
 
-static int Check_hash_struct_ (const Stack *stack, FILE *fp_logs)
+static int Check_hash_struct_ (const Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -284,7 +285,7 @@ static int Check_hash_struct_ (const Stack *stack, FILE *fp_logs)
 
 //=======================================================================================================
 
-static int Stack_vals_poison_set_ (Stack *stack, FILE *fp_logs)
+static int Stack_vals_poison_set_ (Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -311,7 +312,7 @@ static int Stack_vals_poison_set_ (Stack *stack, FILE *fp_logs)
 
 //=======================================================================================================
 
-int Stack_push_ (Stack *stack, elem val, FILE *fp_logs)
+int Stack_push_ (Stack *stack, elem val)
 {
     assert (stack != nullptr && "stack is nullptr");
     
@@ -353,7 +354,7 @@ int Stack_push_ (Stack *stack, elem val, FILE *fp_logs)
 
 //=======================================================================================================
 
-int Stack_pop_ (Stack *stack, elem *val, FILE *fp_logs)
+int Stack_pop_ (Stack *stack, elem *val)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -405,7 +406,7 @@ int Stack_pop_ (Stack *stack, elem *val, FILE *fp_logs)
 
 //=======================================================================================================
 
-static int Check_resize_ (Stack *stack, FILE *fp_logs)
+static int Check_resize_ (Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -422,7 +423,7 @@ static int Check_resize_ (Stack *stack, FILE *fp_logs)
 
 //=======================================================================================================
 
-static int Stack_resize_ (Stack *stack, const int param, FILE *fp_logs)
+static int Stack_resize_ (Stack *stack, const int param)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -454,7 +455,7 @@ static int Stack_resize_ (Stack *stack, const int param, FILE *fp_logs)
 
 //=======================================================================================================
 
-static int Recalloc_stack_ (Stack *stack, FILE *fp_logs) 
+static int Recalloc_stack_ (Stack *stack) 
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -505,7 +506,7 @@ static int Recalloc_stack_ (Stack *stack, FILE *fp_logs)
 
 //=======================================================================================================
 
-static int Stack_canaries_set_ (Stack* stack, FILE *fp_logs) 
+static int Stack_canaries_set_ (Stack* stack) 
  {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -522,7 +523,7 @@ static int Stack_canaries_set_ (Stack* stack, FILE *fp_logs)
 
 //=======================================================================================================
 
-static int Stack_preparing_ (Stack *stack,  FILE *fp_logs)
+static int Stack_preparing_ (Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");
     
@@ -566,11 +567,13 @@ static int Stack_preparing_ (Stack *stack,  FILE *fp_logs)
 //=======================================================================================================
 
 uint64_t Stack_dump_ (Stack *stack,
-                 const char* file_name, const char* func_name, int line, FILE *fp_logs)
+                 const char* file_name, const char* func_name, int line)
 {
     assert (stack != nullptr && "stack is nullptr");
 
     uint64_t err_code = Stack_check (stack);
+
+    FILE *fp_logs = Get_log_file_ptr ();
 
     fprintf (fp_logs, "=================================================\n\n");
 
@@ -661,10 +664,10 @@ uint64_t Stack_dump_ (Stack *stack,
         for (int id_elem = 0; id_elem < stack->capacity; id_elem++)
         {
             if (id_elem < stack->size_data)
-                fprintf (fp_logs, "%5d. *[%" USE_TYPE "]\n", 
+                fprintf (fp_logs, "%5d. *[%" PRINT_TYPE "]\n", 
                             id_elem, stack->data[id_elem]);
             else    
-                fprintf (fp_logs, "%5d.  [%" USE_TYPE "] is POISON\n", 
+                fprintf (fp_logs, "%5d.  [%" PRINT_TYPE "] is POISON\n", 
                                     id_elem, stack->data[id_elem]);
         }
     }
@@ -676,7 +679,7 @@ uint64_t Stack_dump_ (Stack *stack,
 
 //=======================================================================================================
 
-static int Check_stack_data_ptr_ (Stack *stack, FILE *fp_logs)
+static int Check_stack_data_ptr_ (Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");
 
@@ -710,7 +713,7 @@ static int Check_stack_data_ptr_ (Stack *stack, FILE *fp_logs)
 
 //=======================================================================================================
 
-static uint64_t Stack_check_ (Stack *stack, FILE *fp_logs)
+static uint64_t Stack_check_ (Stack *stack)
 {
     assert (stack != nullptr && "stack is nullptr");   
 

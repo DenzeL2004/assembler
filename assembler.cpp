@@ -15,31 +15,31 @@
 
 #include "assembler.h"
 
-static FILE *fp_logs = stderr;
-
-
 
 static int Asm_struct_ctor (Asm_struct *asmst, int code_size);
 
 static int Asm_struct_dtor (Asm_struct *asmst);
 
-static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst, 
-                                const int cur_bypass);
+static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst);
 
-static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst, unsigned char cmd);
+static int Def_args (const char *str_args, const int len_str, 
+                     Asm_struct *asmst, unsigned char cmd);
+
+static int Def_jump_argument (Asm_struct *asmst, char *name_label);
 
 static int Write_convert_file (const Asm_struct *asmst, const char *output_file);
 
 
-#define Set_num_cmd(code, cmd, shift)       \
+
+#define SET_NUM_CMD(code, cmd, shift)       \
     do{                                     \
-        *code  = cmd;                        \
+        *code  = cmd;                       \
          code += shift;                     \                              
     }while (0)
 
-#define Set_args(code, args, shift)         \
+#define SET_ARGS(code, args, shift)         \
     do{                                     \
-        *(elem*) code  = args;               \
+        *(elem*) code  = args;              \
                  code += shift;             \         
     }while (0)
 
@@ -48,12 +48,12 @@ static int Write_convert_file (const Asm_struct *asmst, const char *output_file)
 
 #define DEF_CMD(name, num, arg, ...)                                                            \
                                                                                                 \
-        asmst->cmd_code_tabel[num] = Get_str_code (#name);                                      \      
+        asmst->cmd_hash_tabel[num] = Get_str_hash (#name);                                      \        
 
 
 #define DEF_CMD_JUMP(name, num, ...)                                                            \ 
                                                                                                 \
-        asmst->cmd_code_tabel[num] = Get_str_code (#name);                                      \
+        asmst->cmd_hash_tabel[num] = Get_str_hash (#name);                                      \
 
 
 static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
@@ -65,23 +65,27 @@ static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
     if (Check_nullptr (ASM_CODE))
     {
         Log_report ("Memory was not allocated for the array of commands\n");
+        Err_report ();
         return ST_ASM_CTOR_ERR;
     }
 
     asmst->cnt_bytes = 0;
 
-    asmst->cnt_labels      = 0;
-    asmst->label_capacity  = Init_number_labels;
-    asmst->labels = (Label*) calloc (Init_number_labels, sizeof(Label));
-
-    if (asmst->labels == nullptr)
+    if (Ctor_label_tabel (&asmst->label_table))
     {
-        Log_report ("Memory was not allocated for the array of labels\n");
+        Log_report ("Error ctor Label_tabel structure\n");
+        Err_report ();
         return ST_ASM_CTOR_ERR;
     }
 
-    for (int ip_com = 0; ip_com < Max_cnt_cmd; ip_com++)
-        asmst->cmd_code_tabel[ip_com] = 0;
+    asmst->cur_bypass = 0;
+
+    if (Clear_data ((unsigned char*) asmst->cmd_hash_tabel, 
+                             sizeof (asmst->cmd_hash_tabel)))
+    {
+        Log_report ("Command table cleanup error\n");
+        return ST_ASM_CTOR_ERR;
+    }
     
     #include "cmd.h"
 
@@ -100,21 +104,29 @@ static int Asm_struct_dtor (Asm_struct *asmst)
 
     asmst->cnt_bytes = -1;
 
-    if (Check_nullptr (ASM_CODE))
+    if (Check_nullptr (ASM_CODE)){
         Log_report ("Memory has not been allocated yet\n");
+        Err_report ();
+    }
     else
         free (ASM_CODE);
 
-    if (Check_nullptr (asmst->labels))
-        Log_report ("An error occurred in stack deconstruction\n");
-    else
-        free (asmst->labels);
+    if (Dtor_label_tabel (&asmst->label_table))
+    {
+        Log_report ("Error dtor Label_tabel structure\n");
+        Err_report ();
 
-    asmst->cnt_labels       = -1;
-    asmst->label_capacity   = -1;
+        return ST_ASM_CTOR_ERR;
+    }
 
-    for (int ip_com = 0; ip_com < Max_cnt_cmd; ip_com++)
-        asmst->cmd_code_tabel[ip_com] = 0;
+    asmst->cur_bypass = -1;
+
+    if (Clear_data ((unsigned char*) asmst->cmd_hash_tabel, 
+                             sizeof (asmst->cmd_hash_tabel)))
+    {
+        Log_report ("Command table cleanup error\n");
+        return ST_ASM_CTOR_ERR;
+    }
 
     return 0;
 }
@@ -125,27 +137,21 @@ int Convert_operations (int fdin, const char *output_file)
 {
     assert (fdin >= 0 && "descriptor on file is negative number");
 
-    #ifdef USE_LOG
-        
-        fp_logs = Open_logs_file ();
-        
-        if (fp_logs == stderr)
-            return OPEN_FILE_LOG_ERR;
-
-    #endif 
-
     Text_info commands_line = {};
-
 
     if (Text_read (fdin, &commands_line))
     {
         Log_report ("An error occurred while reading into the buffer\n");
+        Err_report ();
+
         return READ_TO_BUFFER_ERR;
     }
 
     if (commands_line.cnt_lines == 0)
     {
         Log_report ("There are no commands in the input file\n");
+        Err_report ();
+
         return EMPTY_FILE_ERR;
     }
 
@@ -154,50 +160,56 @@ int Convert_operations (int fdin, const char *output_file)
     if (Asm_struct_ctor (&asmst, commands_line.cnt_lines))
     {
         Log_report ("Structure creation error Asm_struct\n");
+        Err_report ();
+
         return ST_ASM_CTOR_ERR;
     }
 
-    asmst.cnt_bytes = Get_convert_commands (&commands_line, &asmst, FIRST);
+    asmst.cur_bypass = FIRST; 
+    asmst.cnt_bytes = Get_convert_commands (&commands_line, &asmst);
 
     if (asmst.cnt_bytes <= 0) 
     {
         Log_report ("Command convert error on FIRST command traversal\n");
+        Err_report ();
+
         return CONVERT_COMMAND_ERR;
     }
 
-
-    asmst.cnt_bytes = Get_convert_commands (&commands_line, &asmst, SECOND);
+    asmst.cur_bypass = SECOND; 
+    asmst.cnt_bytes = Get_convert_commands (&commands_line, &asmst);
 
     if (asmst.cnt_bytes <= 0)
     {
         Log_report ("Command convert error on SECOND command traversal\n");
+        Err_report ();
+
         return CONVERT_COMMAND_ERR;
     }
 
     if (Write_convert_file (&asmst, output_file))
     {
         Log_report ("An error occurred while writing to the output file\n");
+        Err_report ();
+
         return CREAT_CONVERT_FILE_ERR;
     }
 
     if (Asm_struct_dtor (&asmst))
     {
         Log_report ("Error in file destructor\n");
+        Err_report ();
+
         return ST_ASM_DTOR_ERR;
     }
 
     if (Free_buffer (&commands_line))
     {
         Log_report ("The buffer has not been cleared\n");
+        Err_report ();
+
         return FREE_BUF_ERR;
     }
-
-    #ifdef USE_LOG
-        
-        if (Close_logs_file (fp_logs))
-            return CLOSE_FILE_LOG_ERR;
-
-    #endif
 
     return 0;
 }
@@ -206,53 +218,45 @@ int Convert_operations (int fdin, const char *output_file)
 
 #define DEF_CMD(name, num, arg, ...)                                                            \
                                                                                                 \
-        if  (strcmpi (cur_line, #name) == 0) {                                                  \
+        if  (cur_line_hash == asmst->cmd_hash_tabel[num]) {                                     \
                                                                                                 \
             if (arg == 1){                                                                      \
                 ip_line++;                                                                      \
                                                                                                 \                                                      
-                Def_args (commands_line->lines[ip_line].str,                        \
-                          commands_line->lines[ip_line].len_str, asmst, (unsigned char)num);   \
-                                                                                                \   
+                if (Def_args (commands_line->lines[ip_line].str,                                \
+                          commands_line->lines[ip_line].len_str, asmst, (unsigned char)num))    \
+                {                                                                               \
+                    Log_report ("Argument definition error\n");                                 \
+                    Err_report ();                                                              \
+                    return CONVERT_COMMAND_ERR;                                                 \
+                }                                                                               \
                                                                                                 \
-            } else                                                                              \
-                Set_num_cmd (ASM_CODE, num, sizeof (char));                                         \
+            } else{                                                                             \
+                SET_NUM_CMD (ASM_CODE, num, sizeof (char));                                     \
+            }                                                                                   \
         }                                                                                       \  
         else                                                                                  
 
 
 #define DEF_CMD_JUMP(name, num, ...)                                                                    \ 
                                                                                                         \                                      
-        if (strcmpi (cur_line, #name) == 0)                                                             \
+        if (cur_line_hash == asmst->cmd_hash_tabel[num])                                                \
         {                                                                                               \
-            Set_num_cmd (ASM_CODE, num, sizeof (char));                                                     \
+            SET_NUM_CMD (ASM_CODE, num, sizeof (char));                                                 \
                                                                                                         \
             ip_line++;                                                                                  \                                                                      
             char *name_label = commands_line->lines[ip_line].str;                                       \
                                                                                                         \
-            if (Check_reserved_name (name_label, asmst->cmd_code_tabel))                                \
+            if (Def_jump_argument (asmst, name_label))                                                  \
             {                                                                                           \
-                Log_report ("The label is trying to name a reserved command\n");                        \
+                Log_report ("Argument definition error\n");                                             \
+                Err_report ();                                                                          \
                 return CONVERT_COMMAND_ERR;                                                             \
             }                                                                                           \
-                                                                                                        \
-            int ip_jump = Find_label (asmst->labels, name_label, asmst->cnt_labels);                    \
-                                                                                                        \
-            if (ip_jump == Not_init_label && cur_bypass == SECOND)                                      \
-            {                                                                                           \
-                Log_report ("Undefined label\n");                                                       \
-                return CONVERT_COMMAND_ERR;                                                             \
-            }                                                                                           \
-                                                                                                        \       
-            if (ip_jump == Not_init_label)                                                              \
-                Set_args (ASM_CODE, ip_jump, sizeof (elem));                                         \
-            else                                                                                        \
-                Set_args (ASM_CODE, (asmst->labels + ip_jump)->ptr_jump, sizeof (elem));             \
         }                                                                                               \                                                                                       
         else              
 
-static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst, 
-                                const int cur_bypass)
+static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
 {
     assert (commands_line != nullptr && "commands line is nullptr");
     assert (asmst != nullptr && "asmst is nullptr");
@@ -263,8 +267,9 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
 
     while (ip_line < commands_line->cnt_lines)
     {
-        char *cur_line = commands_line->lines[ip_line].str;
-        int   cur_len  = commands_line->lines[ip_line].len_str;
+        char        *cur_line      = commands_line->lines[ip_line].str;
+        int          cur_len       = commands_line->lines[ip_line].len_str;
+        unsigned int cur_line_hash = Get_str_hash (cur_line);
         
         if (cur_len == 0)
         {
@@ -272,60 +277,71 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
             continue;
         }
 
-
         if (cur_line[cur_len - 1] == ':')
         {
             char *name_label = commands_line->lines[ip_line].str;
             name_label [cur_len - 1] = '\0';
 
-            if (Check_reserved_name (name_label, asmst->cmd_code_tabel))
+            if (Check_reserved_name (name_label, asmst->cmd_hash_tabel))
             {
                 Log_report ("The label is trying to name a reserved command\n");
+                Err_report ();
                 return CONVERT_COMMAND_ERR;
             }
 
-            int ip_jump = Find_label (asmst->labels, name_label, asmst->cnt_labels);
+            int ip_jump = Find_label (&asmst->label_table, name_label);
 
             if (ip_jump == Not_init_label)
             {
-                if (Check_cnt_labels (asmst->cnt_labels, asmst->label_capacity))
-                    if (Recalloc_cnt_labels (asmst->labels, &asmst->label_capacity))
+                if (Check_cnt_labels (&asmst->label_table))
+                    if (Recalloc_cnt_labels (&asmst->label_table))
                     {
                         Log_report ("Increasing the number of possible"
                                     "labels encountered an error\n");
+                        Err_report ();
+
                         return CONVERT_COMMAND_ERR;
                     }
 
-                Label_init (asmst->labels + asmst->cnt_labels, 
-                            ASM_CODE - ptr_beg_code, name_label, cur_bypass);
+                Label_init (asmst->label_table.labels + asmst->label_table.cnt_labels, 
+                            ASM_CODE - ptr_beg_code, name_label, asmst->cur_bypass);
 
-                asmst->cnt_labels++;
+                asmst->label_table.cnt_labels++;
             }
 
             else
             {
-                if ((asmst->labels + ip_jump)->bypass == cur_bypass)
+                if ((asmst->label_table.labels + ip_jump)->bypass == asmst->cur_bypass)
                 {
                     Log_report ("Redefining the label: %s\n", name_label);
+                    Err_report ();
+
                     return REDEF_LABEL_ERR;
                 }
             }
 
             name_label [cur_len - 1] = ':';
-        }
 
-        else 
+            ip_line++;
+            continue;
+        }
 
         #include "cmd.h"
         
         /*else*/
         {
             Log_report ("Unknown program entered: %s\n", cur_line);
+            Err_report ();
+
             return UNKNOWN_COM_ERR;
         }
 
         ip_line++;
     }
+
+    for (int i = 0; i<ASM_CODE-ptr_beg_code; i++)
+        printf ("%d ", *(ptr_beg_code + i));
+    printf ("\n");
 
 
     asmst->cnt_bytes = ASM_CODE-ptr_beg_code;
@@ -339,7 +355,8 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst,
 
 //======================================================================================
 
-static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst, unsigned char cmd)
+static int Def_args 
+        (const char *str_args, const int len_str, Asm_struct *asmst, unsigned char cmd)
 {
     assert (str_args  != nullptr && "string is nullptr");
     assert (asmst     != nullptr && "asmst  is nullptr");
@@ -348,6 +365,8 @@ static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst,
     if (!strncpy (str, str_args, len_str))
     {
         Log_report ("string copy failure\n");
+        Err_report ();
+
         return DEF_ARGS_ERR;
     }
 
@@ -356,6 +375,8 @@ static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst,
         if (str[0] != '[' || str[len_str - 1] != ']')
         {
             Log_report ("Incorrect entry command\n");
+            Err_report ();
+
             return DEF_ARGS_ERR;
         }
 
@@ -364,6 +385,8 @@ static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst,
             if (str[ch] == '[' || str[ch] == ']')
             {
                 Log_report ("Incorrect entry command\n");
+                Err_report ();
+
                 return DEF_ARGS_ERR;
             }
         }
@@ -394,6 +417,8 @@ static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst,
             else
             {
                 Log_report ("Incorrect entry command\n");
+                Err_report ();
+
                 return DEF_ARGS_ERR; 
             }
             
@@ -402,19 +427,50 @@ static int Def_args (const char *str_args, const int len_str, Asm_struct *asmst,
         cur_lex = strtok(nullptr, "]+ ");
     }
 
-    Set_num_cmd (ASM_CODE, cmd, sizeof (char));
+    SET_NUM_CMD (ASM_CODE, cmd, sizeof (char));
 
     if (cmd & ARG_IMM)
-    {
-        Set_args (ASM_CODE, arg_num, sizeof (elem));
-    }  
+        SET_ARGS (ASM_CODE, arg_num, sizeof (elem));
 
     if (cmd & ARG_REG)
-    {
-        Set_num_cmd (ASM_CODE, arg_reg, sizeof (char));
-    }
+        SET_NUM_CMD (ASM_CODE, arg_reg, sizeof (char));
+    
     
     return 0;
+}
+
+//======================================================================================
+
+static int Def_jump_argument (Asm_struct *asmst, char *name_label)
+{
+    assert (asmst     != nullptr && "asmst is nullptr");
+    assert (name_label != nullptr && "name_label is nullptr");
+
+    if (Check_reserved_name (name_label, asmst->cmd_hash_tabel))                                
+        {                                                                                           
+            Log_report ("The label is trying to name a reserved command:"                           
+                                                        "%s\n", name_label);                          
+            Err_report ();                                                                          
+                                                                                                    
+            return CONVERT_COMMAND_ERR;                                                             
+        }                                                                                           
+                                                                                                    
+        int ip_jump = Find_label (&asmst->label_table, name_label);                                 
+                                                                                                    
+        if (ip_jump == Not_init_label && asmst->cur_bypass == SECOND)                                      
+        {                                                                                           
+            Log_report ("Undefined label\n");                                                       
+            Err_report ();                                                                          
+                                                                                                    
+            return CONVERT_COMMAND_ERR;                                                             
+        }                                                                                           
+                                                                                                            
+        if (ip_jump == Not_init_label)                                                              
+            SET_ARGS (ASM_CODE, ip_jump, sizeof (elem));                                            
+        else                                                                                        
+            SET_ARGS (ASM_CODE, (asmst->label_table.labels + ip_jump)->ptr_jump, sizeof (elem));  
+
+        return 0;  
 }
 
 //======================================================================================
@@ -428,6 +484,8 @@ static int Write_convert_file (const Asm_struct *asmst, const char *output_file)
     if (fdout < 0)
     {
         Log_report ("Descriptor converted file did't create\n");
+        Err_report ();
+
         return CREAT_CONVERT_FILE_ERR;
     }
 
@@ -451,12 +509,16 @@ static int Write_convert_file (const Asm_struct *asmst, const char *output_file)
         Log_report ("Error writing to binary file\n"
                     "size_file = %d\nbytes_written = %d\n", 
                      size_file,      bytes_written);
+        Err_report ();
+
         return CREAT_CONVERT_FILE_ERR;
     }    
 
     if (close (fdout))
     {
         Log_report ("Converted file did't close");
+        Err_report ();
+
         return CREAT_CONVERT_FILE_ERR;
     }
     

@@ -54,6 +54,17 @@ double Fix_zero (double num){
     return num;
 }
 
+int Clear_data (unsigned char *cmd_hash_tabel, size_t size_data)
+{
+    assert (cmd_hash_tabel != nullptr && "cmd_hash_tabel is nullptr");
+
+    for (int ip = 0; ip < size_data; ip++)
+        cmd_hash_tabel[ip] = 0;
+
+    return 0;
+}
+
+
 int Bin_represent(FILE *fpout, size_t elem, uint64_t size_elem)
 {
     for (uint64_t num_bit = size_elem; num_bit > 0; --num_bit) {
@@ -63,7 +74,7 @@ int Bin_represent(FILE *fpout, size_t elem, uint64_t size_elem)
     return 0;
 }
 
-uint64_t Get_hash (char *data, uint64_t len) 
+uint64_t Get_hash (const char *data, uint64_t len) 
 {
     uint64_t hash = 0;
 

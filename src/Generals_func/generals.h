@@ -102,7 +102,9 @@ double Fix_zero (double num);
 
 int Bin_represent (FILE *fpout, size_t elem, uint64_t size_elem);
 
-uint64_t Get_hash (char *data, uint64_t len);
+int Clear_data (unsigned char *cmd_hash_tabel, size_t size_data);
+
+uint64_t Get_hash (const char *data, uint64_t len);
 
 /** 
  * @brief Paints a line

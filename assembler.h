@@ -5,7 +5,6 @@
 #include "architecture.h"
 #include "labels.h"
 
-
 enum Assembler_errors
 {
     CREAT_CONVERT_FILE_ERR = -1,
@@ -29,32 +28,17 @@ enum Assembler_errors
     FREE_BUF_ERR           = -8, 
 };
 
-#define DEF_CMD(name, num, ...)      \
-    CMD_##name = (num),
-
-#define DEF_CMD_JUMP(name, num, ...) \
-    CMD_##name = (num),
-
-
-enum Assembler_commands
-{
-    #include "cmd.h"
-};
-
-#undef DEF_CMD
-#undef DEF_CMD_JUMP
-
 
 struct Asm_struct
 {
     int cnt_bytes = 0;
     unsigned char *code = nullptr;
 
-    int cnt_labels = 0;
-    int label_capacity = 0;
-    Label* labels = nullptr;
+    Label_table label_table = {};
 
-    unsigned int cmd_code_tabel[Max_cnt_cmd];
+    unsigned int cmd_hash_tabel[Max_cnt_cmd];
+
+    char cur_bypass = 0;
 };
 
 

@@ -9,7 +9,7 @@
 #include <assert.h>
 
 #include "config.h"
-#include "log_def.h"
+#include "../log_info/log_def.h"
 
 struct  Stack_info
 {
@@ -84,29 +84,29 @@ enum Stack_func_err{
 };
 
 #define Stack_ctor(stack, capacity)                 \
-        Stack_ctor_ (stack, capacity, LOG_ARGS, fp_logs)
+        Stack_ctor_ (stack, capacity, LOG_ARGS)
 
-int Stack_ctor_ (Stack *stack, long capacity, LOG_PARAMETS, FILE *fp_logs);
+int Stack_ctor_ (Stack *stack, long capacity, LOG_PARAMETS);
 
 #define Stack_dtor(stack)                           \
-        Stack_dtor_ (stack, fp_logs)
+        Stack_dtor_ (stack)
 
-int Stack_dtor_ (Stack *stack, FILE *fp_logs);
+int Stack_dtor_ (Stack *stack);
 
 #define Stack_push(stack, val)                      \
-        Stack_push_ (stack, val, fp_logs)
+        Stack_push_ (stack, val)
 
-int Stack_push_ (Stack *stack, elem  val, FILE *fp_logs);
+int Stack_push_ (Stack *stack, elem  val);
 
 #define Stack_pop(stack, val)                       \
-        Stack_pop_ (stack, val, fp_logs)
+        Stack_pop_ (stack, val)
 
-int Stack_pop_  (Stack *stack, elem *val, FILE *fp_logs);
+int Stack_pop_  (Stack *stack, elem *val);
 
 #ifdef USE_LOG
 
     #define Stack_dump(stack)                       \
-            Stack_dump_ (stack, LOG_ARGS, fp_logs)
+            Stack_dump_ (stack, LOG_ARGS)
 
 #else  
     
@@ -114,6 +114,6 @@ int Stack_pop_  (Stack *stack, elem *val, FILE *fp_logs);
 
 #endif
 
-uint64_t Stack_dump_ (Stack *stack, LOG_PARAMETS, FILE *fp_logs);
+uint64_t Stack_dump_ (Stack *stack, LOG_PARAMETS);
 
 #endif

@@ -36,7 +36,7 @@ obj/proc.o: proc.cpp proc.h cmd.h architecture.h cmd.h
 obj/process_text.o: src\process_text\process_text.cpp src\process_text\process_text.h
 	g++ src\process_text\process_text.cpp -c -o obj/process_text.o $(FLAGS)
 
-obj/log_errors.o: src/log_info/log_errors.h
+obj/log_errors.o: src/log_info/log_errors.h src/log_info/log_errors.cpp
 	g++ src\log_info\log_errors.cpp -c -o obj/log_errors.o $(FLAGS)
 
 obj/stack.o: src\stack\stack.cpp src\stack\stack.h

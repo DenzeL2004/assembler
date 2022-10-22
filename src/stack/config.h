@@ -33,6 +33,6 @@ const elem POISON_PTR = 4242564;   //<- fill pointer with poison value
 const elem NOT_ALLOC_PTR = 666666; //<- fill in the value of the pointer to which we are going to allocate dynamic memory
 
 
-#define USE_TYPE "d"               //<- specifier character to print elem
+#define PRINT_TYPE "d"               //<- specifier character to print elem
 
 #endif

@@ -13,10 +13,10 @@
 #define ASM_CODE            \
     asmst->code
 
-#define GET_LAST_VAL(val)           \
+#define GET_VAL_FROM_STACK(val)           \
     Stack_pop (CPU_STACK, &val);
 
-#define SET_VAL(val)                \
+#define SET_VAL_TO_STACK(val)                \
     Stack_push (CPU_STACK, val);
 
 
