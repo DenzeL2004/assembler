@@ -281,7 +281,7 @@ int Run_proc (int fdin)
                 GET_VAL_FROM_STACK (&val2);                         \
                                                                     \   
                 if (val1 oper val2)                                 \
-                    CPU_CODE = (ptr_beg_code + *(int*) CPU_CODE);   \                              
+                    CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);   \                              
                 else                                                \
                     CPU_CODE += sizeof (elem);                      \
             }                                                       \

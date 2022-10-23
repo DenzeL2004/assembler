@@ -2,8 +2,8 @@
 
 
 #include "assembler.h"
-#include "src/Generals_func/generals.h"
-#include "src/log_info/log_errors.h"
+#include "../src/Generals_func/generals.h"
+#include "../src/log_info/log_errors.h"
 
 
 static FILE *fp_logs = stderr;

@@ -28,7 +28,7 @@ obj/main_asm.o: asm/main_asm.cpp
 obj/assembler.o: asm/assembler.cpp asm/assembler.h architecture/architecture.h architecture/cmd.h 
 	g++ asm/assembler.cpp -c -o obj/assembler.o $(FLAGS)
 
-obj/labels.o: asm/labels.cpp asm/labels.h 
+obj/labels.o: asm/labels.cpp asm/labels.h architecture/architecture.h
 	g++ asm/labels.cpp -c -o obj/labels.o $(FLAGS)
 
 

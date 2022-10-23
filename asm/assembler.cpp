@@ -345,7 +345,6 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
         ip_line++;
     }
 
-
     asmst->cnt_bytes = asmst->code-ptr_beg_code;
     asmst->code = ptr_beg_code;
 
@@ -397,7 +396,7 @@ static int Def_args
     }
 
     unsigned char arg_reg = 0;
-    int           arg_num = 0;
+    elem           arg_num = 0;
 
     char *cur_lex = strtok (str, "[]+ "); 
     while (cur_lex != nullptr)
@@ -412,7 +411,7 @@ static int Def_args
         {
             if (Check_num (cur_lex))    
             {
-                arg_num = atoi(cur_lex);
+                arg_num = (elem) atof(cur_lex);
                 cmd |= ARG_IMM;
             }
 
@@ -461,16 +460,16 @@ static int Def_jump_argument (Asm_struct *asmst, char *name_label)
                                                                                                     
         if (ip_jump == Not_init_label && asmst->cur_bypass == SECOND)                                      
         {                                                                                           
-            Log_report ("Undefined label\n");                                                       
+            Log_report ("Undefined label: %s\n", name_label);                                                       
             Err_report ();                                                                          
                                                                                                     
             return CONVERT_COMMAND_ERR;                                                             
         }                                                                                           
                                                                                                             
         if (ip_jump == Not_init_label)                                                              
-            SET_ARGS (ASM_CODE, ip_jump, sizeof (elem));                                            
+            SET_ARGS (asmst->code, (elem) ip_jump, sizeof (elem));                                            
         else                                                                                        
-            SET_ARGS (ASM_CODE, (asmst->label_table.labels + ip_jump)->ptr_jump, sizeof (elem));  
+            SET_ARGS (asmst->code, (asmst->label_table.labels + ip_jump)->ptr_jump, sizeof (elem));  
 
         return 0;  
 }

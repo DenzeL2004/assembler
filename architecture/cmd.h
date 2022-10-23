@@ -154,7 +154,7 @@ DEF_CMD (OUT, 16, 0, {
     elem val = 0;
     GET_VAL_FROM_STACK (&val);
 
-    printf ("OUT VAL: %" USE_TYPE "\n", val);
+    printf ("OUT VAL: %.2" USE_TYPE "\n", val);
 })
 
 DEF_CMD_JUMP (JUMP, 8, *, {
@@ -177,7 +177,7 @@ DEF_CMD_JUMP (CALL, 17, *, {
     
     SET_VAL_TO_STACK ((elem) (CPU_CODE - ptr_beg_code));
 
-    CPU_CODE = (ptr_beg_code + *(int*) CPU_CODE);
+    CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);
 
 })
 
