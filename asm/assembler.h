@@ -2,7 +2,7 @@
 #define _ASSEMBLER_H_
 
 
-#include "architecture.h"
+#include "../architecture/architecture.h"
 #include "labels.h"
 
 enum Assembler_errors

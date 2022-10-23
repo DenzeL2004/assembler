@@ -5,8 +5,8 @@
 #include <ctype.h>
 
 #include "labels.h"
-#include "src/Generals_func/generals.h"
-#include "src/log_info/log_errors.h"
+#include "../src/Generals_func/generals.h"
+#include "../src/log_info/log_errors.h"
 
 
 int Label_init (Label *label, const int ip_cmd, const char *name, const int bypass) 

@@ -13,7 +13,7 @@ const int Cnt_reg = 16;
 
 const int Max_cnt_cmd = (1 << 5);
 
-const char Cmd_mask = (1 << 5) - 1;
+const unsigned char Cmd_mask = Max_cnt_cmd - 1;
 
 enum Arg_type
 {
@@ -50,7 +50,6 @@ enum Assembler_commands
 
 #undef DEF_CMD
 #undef DEF_CMD_JUMP
-
 
 
 #define USE_TYPE "d"               //<- specifier character to print/scan elem

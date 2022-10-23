@@ -8,13 +8,19 @@
     &cpu->stack
 
 #define CPU_CODE            \
-    code
+    cpu->code
+
+#define CPU_RAM             \
+     cpu->ram[(int) arg]
+
+#define CPU_REGS             \
+     cpu->regs[(int) arg]
 
 #define ASM_CODE            \
     asmst->code
 
 #define GET_VAL_FROM_STACK(val)           \
-    Stack_pop (CPU_STACK, &val);
+    Stack_pop (CPU_STACK, val);
 
 #define SET_VAL_TO_STACK(val)                \
     Stack_push (CPU_STACK, val);

@@ -7,11 +7,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "dsl.h"
+#include "../architecture/dsl.h"
 
-#include "src/process_text/process_text.h"
-#include "src/Generals_func/generals.h"
-#include "src/log_info/log_errors.h"
+#include "../src/process_text/process_text.h"
+#include "../src/Generals_func/generals.h"
+#include "../src/log_info/log_errors.h"
 
 #include "assembler.h"
 
@@ -87,7 +87,7 @@ static int Asm_struct_ctor (Asm_struct *asmst, int code_size)
         return ST_ASM_CTOR_ERR;
     }
     
-    #include "cmd.h"
+    #include "../architecture/cmd.h"
 
     return 0;
 }
@@ -261,7 +261,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
     assert (commands_line != nullptr && "commands line is nullptr");
     assert (asmst != nullptr && "asmst is nullptr");
 
-    unsigned char *ptr_beg_code = ASM_CODE;
+    unsigned char *ptr_beg_code = asmst->code;
 
     int ip_line = 0;
 
@@ -272,6 +272,12 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
         unsigned int cur_line_hash = Get_str_hash (cur_line);
         
         if (cur_len == 0)
+        {
+            ip_line++;
+            continue;
+        }
+
+        if (cur_len >= 2 && cur_line [0] == '/' && cur_line [1] == '/')
         {
             ip_line++;
             continue;
@@ -304,7 +310,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
                     }
 
                 Label_init (asmst->label_table.labels + asmst->label_table.cnt_labels, 
-                            ASM_CODE - ptr_beg_code, name_label, asmst->cur_bypass);
+                             asmst->code - ptr_beg_code, name_label, asmst->cur_bypass);
 
                 asmst->label_table.cnt_labels++;
             }
@@ -326,7 +332,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
             continue;
         }
 
-        #include "cmd.h"
+        #include "../architecture/cmd.h"
         
         /*else*/
         {
@@ -339,13 +345,9 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
         ip_line++;
     }
 
-    for (int i = 0; i<ASM_CODE-ptr_beg_code; i++)
-        printf ("%d ", *(ptr_beg_code + i));
-    printf ("\n");
 
-
-    asmst->cnt_bytes = ASM_CODE-ptr_beg_code;
-    ASM_CODE = ptr_beg_code;
+    asmst->cnt_bytes = asmst->code-ptr_beg_code;
+    asmst->code = ptr_beg_code;
 
     return asmst->cnt_bytes;
 }

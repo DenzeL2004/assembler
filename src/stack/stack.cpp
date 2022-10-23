@@ -102,7 +102,7 @@ int Stack_ctor_ (Stack *stack, long capacity,
     stack->stack_info = {};
     Stack_info_ctor (&stack->stack_info);
 
-    stack->data = (elem*) NOT_ALLOC_PTR;
+    stack->data = (elem*) &NOT_ALLOC_PTR;
 
     stack->size_data = 0;
 
@@ -135,14 +135,14 @@ int Stack_dtor_ (Stack *stack)
 {   
     assert (stack != nullptr && "stack is nullptr");
 
-    if (stack->data != (elem*) NOT_ALLOC_PTR)
+    if (stack->data != &NOT_ALLOC_PTR)
     {
         if (Stack_dump (stack)) return STACK_DTOR_ERR;   
     }
 
     Stack_vals_poison_set (stack);
 
-    if (stack->data != (elem*) NOT_ALLOC_PTR)
+    if (stack->data != &NOT_ALLOC_PTR)
     {
         #ifdef CANARY_PROTECT
             free ((uint64_t*) stack->data - 1);
@@ -151,7 +151,7 @@ int Stack_dtor_ (Stack *stack)
         #endif
     }
 
-    stack->data = (elem*) POISON_PTR;
+    stack->data = (elem*) &POISON_PTR;
 
     stack->size_data = POISON_VAL;
     stack->capacity  = POISON_VAL;
@@ -298,7 +298,7 @@ static int Stack_vals_poison_set_ (Stack *stack)
         return SET_STACK_VALLS_ERR;
     }
 
-    if (stack->data == (elem*) NOT_ALLOC_PTR)
+    if (stack->data == (elem*) &NOT_ALLOC_PTR)
     {
         Log_report ("Memory has not been allocated for subsequent stack filling\n");
         return SET_STACK_VALLS_ERR;
@@ -316,7 +316,7 @@ int Stack_push_ (Stack *stack, elem val)
 {
     assert (stack != nullptr && "stack is nullptr");
     
-    if (stack->data == (elem*) NOT_ALLOC_PTR)
+    if (stack->data == (elem*) &NOT_ALLOC_PTR)
     {
         Stack_preparing (stack);
     }
@@ -360,7 +360,7 @@ int Stack_pop_ (Stack *stack, elem *val)
 
     if (Check_stack_data_ptr (stack)) return STACK_PUSH_ERR;
 
-    if (stack->data == (elem*) NOT_ALLOC_PTR)
+    if (stack->data == &NOT_ALLOC_PTR)
     {
         Log_report ("Size is zero, you can't use Stack_pop\n");
         return 0;
@@ -632,8 +632,6 @@ uint64_t Stack_dump_ (Stack *stack,
     
     #endif
 
-    if (err_code == 0) return 0; 
-
     fprintf (fp_logs, "\n");
 
     if (err_code & BAD_DATA_PTR) fprintf (fp_logs, "stack pointer data is BAD.\n");
@@ -695,13 +693,13 @@ static int Check_stack_data_ptr_ (Stack *stack)
         return BAD_DATA_PTR;
     }
 
-    if (stack->data == (elem*) NOT_ALLOC_PTR && 
+    if (stack->data == (elem*) &NOT_ALLOC_PTR && 
         stack->capacity == 0 && stack->size_data == 0)
     {
             return 0;
     }
 
-    if (stack->data == (elem*) NOT_ALLOC_PTR && 
+    if (stack->data == (elem*) &NOT_ALLOC_PTR && 
         (stack->size_data != 0))
     {
         Log_report ("The user tried to use a pointer which has't yet been allocated\n");

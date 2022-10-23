@@ -1,8 +1,7 @@
 #ifndef _LABELS_H_
 #undef  _LABELS_H_
 
-#include <string.h>
-#include "architecture.h"
+#include "../architecture/architecture.h"
 
 static const int Init_number_labels = 20;
 

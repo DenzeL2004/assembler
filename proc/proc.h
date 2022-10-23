@@ -1,8 +1,9 @@
 #ifndef _PROC_H_
 #define _PROC_H_
 
-#include "src/stack/stack.h"
-#include "architecture.h"
+#include "../architecture/architecture.h"
+#include "../src/stack/stack.h"
+
 
 const int Ln_ram = 20;
 

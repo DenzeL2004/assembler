@@ -3,8 +3,8 @@
 #include <windows.h>
 
 #include "proc.h"
-#include "src/Generals_func/generals.h"
-#include "src/log_info/log_errors.h"
+#include "../src/Generals_func/generals.h"
+#include "../src/log_info/log_errors.h"
 
 
 int main (int argc, char *argv[])

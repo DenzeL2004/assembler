@@ -7,16 +7,14 @@
 #include <string.h>
 
 
-#include "src/Generals_func/generals.h"
-#include "src/log_info/log_errors.h"
+#include "../src/Generals_func/generals.h"
+#include "../src/log_info/log_errors.h"
 
 
-#include "dsl.h"
+#include "../architecture/dsl.h"
 
 #include "proc.h"
-#include "architecture.h"
-#include "assembler.h"
-
+#include "../architecture/architecture.h"
 
 static int Cpu_struct_ctor (Cpu_struct *cpu);
 
@@ -26,24 +24,21 @@ static int Init_cpu        (Cpu_struct *cpu, int fdin);
 
 static int Comands_exe (Cpu_struct *cpu);
 
-static int Check_header (Cpu_struct *cpu);
+static int Check_header (unsigned char **buffer);
 
 
-static unsigned char *Get_push_arg 
-(unsigned char *code, const int cmd, elem *arg, const Cpu_struct *cpu);
 
-static unsigned char *Set_pop_arg 
-(unsigned char *code, const int cmd, elem val, Cpu_struct *cpu);
+static elem Get_arg (const unsigned char cmd, Cpu_struct *cpu);
 
 
 static int Show_ram (Cpu_struct *cpu);
 
 
-static int Proc_dump (Cpu_struct *cpu);
+static int Proc_dump (const Cpu_struct *cpu, const unsigned char *beg_code);
 
-static int Write_cpu_code (FILE* fpout, Cpu_struct *cpu);
+static int Write_cpu_code (FILE* fpout, const Cpu_struct *cpu, const unsigned char *beg_code);
 
-static int Write_cpu_regs (FILE* fpout, Cpu_struct *cpu);
+static int Write_cpu_regs (FILE* fpout, const Cpu_struct *cpu);
 
 //======================================================================================
 
@@ -61,7 +56,7 @@ static int Cpu_struct_ctor (Cpu_struct *cpu)
                              sizeof (cpu->regs)))
     {
         Log_report ("Command table cleanup error\n");
-        return ST_ASM_CTOR_ERR;
+        return PROC_CTOR_ERR;
     }
 
     cpu->ram = nullptr;
@@ -108,7 +103,7 @@ static int Cpu_struct_dtor (Cpu_struct *cpu)
                              sizeof (cpu->regs)))
     {
         Log_report ("Command table cleanup error\n");
-        return ST_ASM_CTOR_ERR;
+        return PROC_DTOR_ERR;
     }
 
     if (Stack_dtor (&cpu->stack))
@@ -138,20 +133,28 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
         return READ_FROM_BIN_ERR;
     }
 
-    cpu->code = (unsigned char*) calloc (file_stat.st_size, sizeof (unsigned char));
-
-    int read_byte = read (fdin, cpu->code, file_stat.st_size);
-
-    if (read_byte != read_byte)
+    unsigned char* buffer = (unsigned char*) calloc (file_stat.st_size, sizeof (unsigned char));
+    if (Check_nullptr (buffer))
     {
-        Log_report ("function read outputs a negative number bin file\n");
+        Log_report ("An error occurred while allocating memory for the buffer\n");
+        Err_report ();
+
+        return ERR_MEMORY_ALLOC;
+    }
+
+    int read_byte = read (fdin, buffer, file_stat.st_size);
+
+    if (read_byte <= 0)
+    {
+        Log_report ("function read outputs a negative number bin file\n"
+                    "read_byte = %d\n", read_byte);
         Err_report ();
 
         return READ_FROM_BIN_ERR;
     }
 
     
-    if (Check_header (cpu))
+    if (Check_header (&buffer))
     {
         Log_report ("File headers did not match constants\n");
         Err_report ();
@@ -159,36 +162,56 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
         return READ_FROM_BIN_ERR;
     }
 
+    cpu->cnt_bytes = *(int*) buffer;
+    buffer += sizeof (int);
 
-    cpu->cnt_bytes = *(int*) cpu->code;
-    cpu->code += sizeof (int);
+    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes, sizeof (unsigned char));
+    if (cpu->code == nullptr)
+    {
+        Log_report ("An error occurred while allocating memory for the code\n");
+        Err_report ();
 
+        return ERR_MEMORY_ALLOC;
+    }
+    
+    memcpy (cpu->code, buffer, cpu->cnt_bytes * sizeof (unsigned char));
+
+    if (cpu->code == nullptr)
+    {
+        Log_report ("Failed to copy from buffer to code\n");
+        Err_report ();
+
+        return ERR_MEMORY_ALLOC;
+    }
+
+    free (buffer - 3 * sizeof (int));
 
     cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
     if (Check_nullptr (cpu->ram))
     {
         Log_report ("An error occurred while allocating memory for the processor\n");
         Err_report ();
-
+     
         return NOT_ALLOC_PTR;
     }
 
+    
     return 0;
 }
 
 //======================================================================================
 
-static int Check_header (Cpu_struct *cpu)
+static int Check_header (unsigned char **buffer)
 {
-    assert (cpu != nullptr && "cpu is is nullptr");
+    assert (buffer != nullptr && "buffer is is nullptr");
 
     Bin_file bin_file = {};
 
-    bin_file.signature = *(int*) cpu->code;
-    cpu->code += sizeof (int);
+    bin_file.signature = *(int*) *buffer;
+    *buffer += sizeof (int);
 
-    bin_file.asm_version = *(int*) cpu->code;
-    cpu->code += sizeof (int);
+    bin_file.asm_version = *(int*) *buffer;
+    *buffer += sizeof (int);
 
 
     if (bin_file.signature != Sig)
@@ -247,22 +270,22 @@ int Run_proc (int fdin)
 
 //======================================================================================
 
-#define DEF_CMD_JUMP(name, num, oper, ...)                      \                                       
-        case num:                                               \
-        {                                                       \
-            if (num == CMD_JUMP || num == CMD_CALL){            \
-                __VA_ARGS__                                     \
-            } else {                                            \
-                elem val1 = 0, val2 = 0;                        \
-                GET_VAL_FROM_STACK (val1);                      \
-                GET_VAL_FROM_STACK (val2);                      \
-                                                                \
-                if (val1 oper val2)                             \
-                    code = (ptr_beg_code + *(int*) code);       \                              
-                else                                            \
-                    code += sizeof (elem);                      \
-            }                                                   \
-            break;                                              \
+#define DEF_CMD_JUMP(name, num, oper, ...)                          \                                       
+        case num:                                                   \
+        {                                                           \
+            if (num == CMD_JUMP || num == CMD_CALL){                \
+                __VA_ARGS__                                         \
+            } else {                                                \   
+                elem val1 = 0, val2 = 0;                            \
+                GET_VAL_FROM_STACK (&val1);                         \
+                GET_VAL_FROM_STACK (&val2);                         \
+                                                                    \   
+                if (val1 oper val2)                                 \
+                    CPU_CODE = (ptr_beg_code + *(int*) CPU_CODE);   \                              
+                else                                                \
+                    CPU_CODE += sizeof (elem);                      \
+            }                                                       \
+            break;                                                  \   
         }                                                       
 
 #define DEF_CMD(name, num, arg, ...)                            \                                       
@@ -276,23 +299,19 @@ static int Comands_exe (Cpu_struct *cpu)
 {
     assert (cpu != nullptr && "cpu is nullptr");    
 
-    unsigned char *code = cpu->code;
-    unsigned char *ptr_beg_code = code;
+    unsigned char *ptr_beg_code = cpu->code;
 
-
-    while (code - ptr_beg_code < cpu->cnt_bytes)
+    while (cpu->code - ptr_beg_code < cpu->cnt_bytes)
     {
-        cpu->cur_cmd = code - ptr_beg_code;
+        cpu->cur_cmd = cpu->code - ptr_beg_code;
 
-        unsigned char cmd = *code;
+        unsigned char cmd = *cpu->code;
 
-        code++;
-
-        //printf ("*cmd = %d\n", cmd);
+        cpu->code++;
 
         switch (cmd & Cmd_mask)
         {   
-            #include "cmd.h"
+            #include "../architecture/cmd.h"
 
             default:
                 Log_report ("Unknown command: %d\n", cmd);
@@ -301,9 +320,10 @@ static int Comands_exe (Cpu_struct *cpu)
                 return PROCESS_ERR;
         }
 
-        Proc_dump (cpu);
-        
+        Proc_dump (cpu, ptr_beg_code);
     }
+
+    cpu->code = ptr_beg_code;
 
     return 0;
 }
@@ -313,129 +333,58 @@ static int Comands_exe (Cpu_struct *cpu)
 
 //======================================================================================
 
-static unsigned char *Get_push_arg 
-        (unsigned char *code, const int cmd, elem *arg, const Cpu_struct *cpu)
+static elem Get_arg (const unsigned char cmd, Cpu_struct *cpu)
 {
-    assert (code != nullptr && "code is nullptr");
-    assert (cpu  != nullptr && "cpu is nullptr");
-    
+    assert (cpu != nullptr && "cpu is nullptr");
+
+    elem arg = 0;
+
     if (cmd & ARG_IMM)
     {
-        *arg  += *(elem*) code;
-        code += sizeof (elem); 
+        arg  += *(elem*) cpu->code;
+        cpu->code += sizeof (elem); 
     }    
 
     if (cmd & ARG_REG)
     {
-        if (*code < Cnt_reg)
-            *arg  += cpu->regs[*code];
+        if (*cpu->code < Cnt_reg)
+        {
+            switch (cmd & Cmd_mask){
+
+            case CMD_PUSH:
+
+                arg  += (elem) cpu->regs[*cpu->code];
+                break;
+            
+            case CMD_POP:
+            {
+                if (cmd & ARG_RAM)
+                    arg  += (elem) cpu->regs[*cpu->code];
+                else
+                    arg  += *cpu->code;   
+                break;
+            }
+
+            default:
+                Log_report ("Unknown command: %d\n", cmd);
+                Err_report ();
+
+                return PROCESS_ERR;
+            }
+        }
+
         else
         {
             Log_report ("Accessing unallocated memory\n");
             Err_report ();
 
-            return nullptr;
+            return 0;
         }
 
-        code += sizeof (char); 
+        cpu->code += sizeof (char); 
     }
 
-    if (cmd & ARG_RAM)
-    {
-        if (*arg < Ram_size && *arg >= 0)
-        {
-            *arg = cpu->ram[(int) *arg];
-            usleep (Program_delay);
-        }
-        else
-        {
-            Log_report ("Accessing unallocated memory\n");
-            Err_report ();
-
-            return nullptr;
-        }
-    }
-
-    return code;
-}
-
-//======================================================================================
-
-static unsigned char *Set_pop_arg 
-        (unsigned char *code, const int cmd, elem val, Cpu_struct *cpu)
-{
-    assert (code != nullptr && "code is nullptr");
-    assert (cpu  != nullptr && "cpu is nullptr");
-
-    int arg = 0;
-
-    if (cmd & ARG_RAM)
-    {
-        if (cmd & ARG_IMM)
-        {
-            arg  += *(int*) code;
-            code += sizeof (elem); 
-        }  
-
-        if (cmd & ARG_REG)
-        {
-            arg  += cpu->regs[*(int*) code];
-            code += sizeof (char); 
-        }
-
-
-        if (arg < Ram_size)
-        {
-            cpu->ram[arg] = val;
-            usleep (Program_delay);
-        }
-
-        else
-        {
-            Log_report ("Accessing unallocated RAM memory\n");
-            Err_report ();
-
-            return nullptr;
-        }
-        
-        return code;
-    }
-
-    if (cmd & ARG_REG)
-    {
-        arg  += *code;
-        code += sizeof (char);
-
-        if (cmd & ARG_IMM)
-        {
-            Log_report ("Incorrect command entry\n");
-            Err_report ();
-
-            return nullptr;
-        }
-       
-        if (arg < Cnt_reg)
-            cpu->regs[arg] = val;
-        else
-        {
-            Log_report ("Accessing unallocated REG memory\n");
-            Err_report ();
-
-            return nullptr;
-        }
-
-        return code;
-    }
-
-    if (cmd & ARG_IMM)
-    {
-        Log_report ("Incorrect command entry\n");
-        Err_report ();
-
-        return nullptr;
-    }
-
-    return nullptr;
+    return arg;
 }
 
 //======================================================================================
@@ -451,7 +400,7 @@ static int Show_ram (Cpu_struct *cpu)
             int adress = ln * Cl_ram + cl;
 
             if (cpu->ram[adress]) Print_colour (GREEN, "*");
-            else                  Print_colour (RED, "*");
+            else                  Print_colour (RED,   "*");
         }
 
         printf ("\n");
@@ -462,18 +411,18 @@ static int Show_ram (Cpu_struct *cpu)
 
 //======================================================================================
 
-static int Proc_dump (Cpu_struct *cpu)
+static int Proc_dump (const Cpu_struct *cpu, const unsigned char *beg_code)
 {
     assert (cpu != nullptr && "cpu is nullptr");
 
-    Stack_dump (&cpu->stack);
+    Stack_dump ((Stack*) &cpu->stack);
 
     FILE *fp_log = Get_log_file_ptr ();
 
     fprintf (fp_log, "============================================\n\n");
 
     #ifdef USE_CPU_CODE_DUMP
-        Write_cpu_code (fp_log, cpu);
+        Write_cpu_code (fp_log, cpu, beg_code);
     #endif
 
     fprintf (fp_log, "\n\n");
@@ -490,10 +439,11 @@ static int Proc_dump (Cpu_struct *cpu)
 
 //======================================================================================
 
-static int Write_cpu_code (FILE* fpout, Cpu_struct *cpu)
+static int Write_cpu_code (FILE* fpout, const Cpu_struct *cpu, const unsigned char *beg_code)
 {
     assert (fpout != nullptr && "fpout is nullptr");
     assert (cpu != nullptr && "cpu is nullptr");
+    assert (beg_code != nullptr && "beg_code is nullptr");
 
     for (int ip_com = 0; ip_com < cpu->cnt_bytes; ip_com++)
     {
@@ -504,13 +454,13 @@ static int Write_cpu_code (FILE* fpout, Cpu_struct *cpu)
 
     for (int cur_byte = 0; cur_byte < cpu->cnt_bytes; cur_byte++)
     {
-        fprintf (fpout, "%03d ", cpu->code[cur_byte]);
+        fprintf (fpout, "%03d ", beg_code[cur_byte]);
     }
 
     fprintf (fpout, "\n");
 
     fprintf (fpout," %*s", (cpu->cur_cmd)*4, "^");
-    fprintf (fpout, "cur_cmd = %d", cpu->code[cpu->cur_cmd]);
+    fprintf (fpout, "cur_cmd = %d", beg_code[cpu->cur_cmd]);
 
     return 0;
 }
@@ -520,12 +470,12 @@ static int Write_cpu_code (FILE* fpout, Cpu_struct *cpu)
 #define DEF_REG(name, num)   \
     fprintf (fpout, "%s: %"  USE_TYPE "\n", #name, cpu->regs[num]);   
 
-static int Write_cpu_regs (FILE* fpout, Cpu_struct *cpu)
+static int Write_cpu_regs (FILE* fpout, const Cpu_struct *cpu)
 {
     assert (fpout != nullptr && "fpout is nullptr");
     assert (cpu != nullptr && "cpu is nullptr");
 
-    #include "regs.h"
+    #include "../architecture/regs.h"
 
     return 0;
 }
