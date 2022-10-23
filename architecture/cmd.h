@@ -71,7 +71,7 @@ DEF_CMD (DIV, 6, 0, {
     elem val1 = 0, val2 = 0;
     GET_VAL_FROM_STACK (&val1);
     GET_VAL_FROM_STACK (&val2);
-
+    
     SET_VAL_TO_STACK (val2 / val1);
 })
 
@@ -154,26 +154,86 @@ DEF_CMD (OUT, 16, 0, {
     elem val = 0;
     GET_VAL_FROM_STACK (&val);
 
-    printf ("OUT VAL: %.2" USE_TYPE "\n", val);
+    printf ("%.2" USE_TYPE "\n", val);
 })
 
-DEF_CMD_JUMP (JUMP, 8, *, {
-    CPU_CODE = (ptr_beg_code + *CPU_CODE);
+DEF_CMD_JUMP (JUMP, 8, {
+    CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);
 })
 
-DEF_CMD_JUMP (JA,  9,  >)
+DEF_CMD_JUMP (JA,  9,  {
 
-DEF_CMD_JUMP (JAE, 10, >=)
+    elem val1 = 0, val2 = 0;                           
+    GET_VAL_FROM_STACK (&val1);                        
+    GET_VAL_FROM_STACK (&val2);                        
 
-DEF_CMD_JUMP (JB, 11,  <)
+    if (!Equality_double((double) val1, (double) val2) && val1 > val2)                                 
+        CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);                                 
+    else                                                
+        CPU_CODE += sizeof (elem);
+})
 
-DEF_CMD_JUMP (JBE, 12, <=)
+DEF_CMD_JUMP (JAE, 10, {
 
-DEF_CMD_JUMP (JL, 13, ==)
+    elem val1 = 0, val2 = 0;                           
+    GET_VAL_FROM_STACK (&val1);                        
+    GET_VAL_FROM_STACK (&val2);                        
 
-DEF_CMD_JUMP (JM, 14, !=)
+    if (Equality_double((double) val1, (double) val2) || val1 > val2)                                 
+        CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);                                 
+    else                                                
+        CPU_CODE += sizeof (elem);
+})
 
-DEF_CMD_JUMP (CALL, 17, *, {
+DEF_CMD_JUMP (JB, 11, {
+
+    elem val1 = 0, val2 = 0;                           
+    GET_VAL_FROM_STACK (&val1);                        
+    GET_VAL_FROM_STACK (&val2);                        
+
+    if (!Equality_double((double) val1, (double) val2) && val1 < val2)                                 
+        CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);                                 
+    else                                                
+        CPU_CODE += sizeof (elem);
+})
+
+DEF_CMD_JUMP (JBE, 12, {
+
+    elem val1 = 0, val2 = 0;                           
+    GET_VAL_FROM_STACK (&val1);                        
+    GET_VAL_FROM_STACK (&val2);                        
+
+    if (Equality_double((double) val1, (double) val2) || val1 < val2)                                 
+        CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);                                 
+    else                                                
+        CPU_CODE += sizeof (elem);
+})
+
+DEF_CMD_JUMP (JL, 13, {
+
+    elem val1 = 0, val2 = 0;                           
+    GET_VAL_FROM_STACK (&val1);                        
+    GET_VAL_FROM_STACK (&val2);                        
+
+    if (Equality_double((double) val1, (double) val2))                                 
+        CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);                                 
+    else                                                
+        CPU_CODE += sizeof (elem);
+})
+
+DEF_CMD_JUMP (JM, 14, {
+
+    elem val1 = 0, val2 = 0;                           
+    GET_VAL_FROM_STACK (&val1);                        
+    GET_VAL_FROM_STACK (&val2);                        
+
+    if (!Equality_double((double) val1, (double) val2))                                 
+        CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);                                 
+    else                                                
+        CPU_CODE += sizeof (elem);
+})
+
+DEF_CMD_JUMP (CALL, 17, {
     
     SET_VAL_TO_STACK ((elem) (CPU_CODE - ptr_beg_code));
 
@@ -193,5 +253,3 @@ DEF_CMD (RET, 18, 0, {
 DEF_CMD (SHOWRAM, 19, 0, {
        Show_ram (CPU);
 })
-
-

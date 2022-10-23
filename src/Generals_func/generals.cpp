@@ -67,6 +67,8 @@ int Clear_data (unsigned char *cmd_hash_tabel, size_t size_data)
 
 int Bin_represent(FILE *fpout, size_t elem, uint64_t size_elem)
 {
+	assert (fpout != nullptr && "fpot is nullptr");
+	
     for (uint64_t num_bit = size_elem; num_bit > 0; --num_bit) {
         fprintf(fpout, "%d", (elem & (1 << (num_bit-1))) ? 1 : 0);
     }
@@ -76,11 +78,13 @@ int Bin_represent(FILE *fpout, size_t elem, uint64_t size_elem)
 
 uint64_t Get_hash (const char *data, uint64_t len) 
 {
+	assert (data != nullptr && "data is nullptr");
+
     uint64_t hash = 0;
 
     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
     {
-        hash += data[num_bit];
+        hash += (unsigned char) data[num_bit];
         hash += (hash << 10);
         hash ^= (hash >> 6);
 	}

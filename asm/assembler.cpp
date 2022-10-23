@@ -269,7 +269,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
     {
         char        *cur_line      = commands_line->lines[ip_line].str;
         int          cur_len       = commands_line->lines[ip_line].len_str;
-        unsigned int cur_line_hash = Get_str_hash (cur_line);
+        uint64_t cur_line_hash = Get_str_hash (cur_line);
         
         if (cur_len == 0)
         {
@@ -375,7 +375,7 @@ static int Def_args
     {
         if (str[0] != '[' || str[len_str - 1] != ']')
         {
-            Log_report ("Incorrect entry command\n");
+            Log_report ("Incorrect entry command: %s\n", str);
             Err_report ();
 
             return DEF_ARGS_ERR;
@@ -385,7 +385,7 @@ static int Def_args
         {
             if (str[ch] == '[' || str[ch] == ']')
             {
-                Log_report ("Incorrect entry command\n");
+                Log_report ("Incorrect entry command: %s\n", str);
                 Err_report ();
 
                 return DEF_ARGS_ERR;
@@ -417,7 +417,7 @@ static int Def_args
 
             else
             {
-                Log_report ("Incorrect entry command\n");
+                Log_report ("Incorrect entry command: %s\n", cur_lex);
                 Err_report ();
 
                 return DEF_ARGS_ERR; 

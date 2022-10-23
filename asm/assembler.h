@@ -36,7 +36,7 @@ struct Asm_struct
 
     Label_table label_table = {};
 
-    unsigned int cmd_hash_tabel[Max_cnt_cmd];
+    uint64_t cmd_hash_tabel[Max_cnt_cmd];
 
     char cur_bypass = 0;
 };

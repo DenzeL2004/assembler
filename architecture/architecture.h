@@ -3,6 +3,7 @@
 
 typedef int elem;
 
+
 static const char *Default_name_output_file = "out.bin";
 
 static const int Ver = 1;
@@ -14,6 +15,7 @@ const int Cnt_reg = 16;
 const int Max_cnt_cmd = (1 << 5);
 
 const unsigned char Cmd_mask = Max_cnt_cmd - 1;
+
 
 enum Arg_type
 {

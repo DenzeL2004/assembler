@@ -1,0 +1,890 @@
+
+--------------------------------------------------
+TXLib предупреждает:
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403215 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 83. Попытка прочесть данные по адресу 0x02836000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+#1: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x4EEC (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403215 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (83):
+
+     81:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     82:     {
+=>   83:         hash += (unsigned char) data[num_bit];
+     84:         hash += (hash << 10);
+     85:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x004311D8 in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430ED8 in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:15:59, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:17:22
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib соболезнует...
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: signal (11, 0x00): SIGSEGV: Доступ по неверному указателю. Ставьте ассерты! 
+
+Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403215 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 83. Попытка прочесть данные по адресу 0x02836000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+С помощью функции signal() вы можете сами обработать эту ошибку.
+
+#2: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x4EEC (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403215 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (83):
+
+     81:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     82:     {
+=>   83:         hash += (unsigned char) data[num_bit];
+     84:         hash += (hash << 10);
+     85:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x004311D8 in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430ED8 in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:15:59, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:17:22
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib предупреждает:
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403215 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 83. Попытка прочесть данные по адресу 0x02906000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+#1: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x27F0 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403215 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (83):
+
+     81:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     82:     {
+=>   83:         hash += (unsigned char) data[num_bit];
+     84:         hash += (hash << 10);
+     85:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x004311D8 in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430ED8 in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:18:14, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:19:41
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib соболезнует...
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: signal (11, 0x00): SIGSEGV: Доступ по неверному указателю. Ставьте ассерты! 
+
+Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403215 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 83. Попытка прочесть данные по адресу 0x02906000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+С помощью функции signal() вы можете сами обработать эту ошибку.
+
+#2: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x27F0 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403215 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (83):
+
+     81:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     82:     {
+=>   83:         hash += (unsigned char) data[num_bit];
+     84:         hash += (hash << 10);
+     85:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x004311D8 in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430ED8 in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:18:14, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:19:41
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib предупреждает:
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403237 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 85. Попытка прочесть данные по адресу 0x028C6000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+#1: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x5274 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403237 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (85):
+
+     83: 
+     84:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+=>   85:     {
+     86:         hash += (unsigned char) data[num_bit];
+     87:         hash += (hash << 10);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x004311FC in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430EFC in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:21:59, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:22:08
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib соболезнует...
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: signal (11, 0x00): SIGSEGV: Доступ по неверному указателю. Ставьте ассерты! 
+
+Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403237 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 85. Попытка прочесть данные по адресу 0x028C6000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+С помощью функции signal() вы можете сами обработать эту ошибку.
+
+#2: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x5274 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403237 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (85):
+
+     83: 
+     84:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+=>   85:     {
+     86:         hash += (unsigned char) data[num_bit];
+     87:         hash += (hash << 10);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x004311FC in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430EFC in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:21:59, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:22:07
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib предупреждает:
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403259 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 87. Попытка прочесть данные по адресу 0x02926000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+#1: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x74E4 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403259 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (87):
+
+     85:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     86:     {
+=>   87:         hash += (unsigned char) data[num_bit];
+     88:         hash += (hash << 10);
+     89:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x0043121C in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430F1C in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:25:47, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:25:57
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib соболезнует...
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: signal (11, 0x00): SIGSEGV: Доступ по неверному указателю. Ставьте ассерты! 
+
+Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403259 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 87. Попытка прочесть данные по адресу 0x02926000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+С помощью функции signal() вы можете сами обработать эту ошибку.
+
+#2: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x74E4 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403259 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (87):
+
+     85:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     86:     {
+=>   87:         hash += (unsigned char) data[num_bit];
+     88:         hash += (hash << 10);
+     89:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x0043121C in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430F1C in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:25:47, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:25:57
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib предупреждает:
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403259 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 87. Попытка прочесть данные по адресу 0x027D6000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+#1: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x6028 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403259 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (87):
+
+     85:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     86:     {
+=>   87:         hash += (unsigned char) data[num_bit];
+     88:         hash += (hash << 10);
+     89:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x0043121C in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430F1C in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:29:30, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:29:38
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------
+
+--------------------------------------------------
+TXLib соболезнует...
+
+Программа: D:\project\assembler\proc.exe,
+
+ВНЕЗАПНО: signal (11, 0x00): SIGSEGV: Доступ по неверному указателю. Ставьте ассерты! 
+
+Нарушение доступа к памяти.
+
+#1: Исключение EXCEPTION_ACCESS_VIOLATION (0xC0000005) при выполнении кода по адресу 0x00403259 в функции Get_hash() в файле D:/project/assembler/src/Generals_func/generals.cpp на строке 87. Попытка прочесть данные по адресу 0x027D6000. Спасибо _txVectoredExceptionHandler(), что сообщил. Люблю его <3
+
+С помощью функции signal() вы можете сами обработать эту ошибку.
+
+#2: TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400], Instance: 0x0045973C (32-bit), Flags: Cmdre0, Thread: 0x6028 (Main). 
+
+--------------------------------------------------
+Стек вызовов:
+
+# 0 0x00403259 in D:\project\assembler\proc.exe: Get_hash() at D:/project/assembler/src/Generals_func/generals.cpp (87):
+
+     85:     for (uint64_t num_bit = 0; num_bit < len; num_bit++) 
+     86:     {
+=>   87:         hash += (unsigned char) data[num_bit];
+     88:         hash += (hash << 10);
+     89:         hash ^= (hash >> 6);
+
+# 1 0x004019E7 in D:\project\assembler\proc.exe: Stack_hash_save_() at D:/project/assembler/src/stack/stack.cpp (229):
+
+    227:     size_t size_data = stack->capacity * sizeof (elem);
+    228: 
+=>  229:     stack->hash_data = Get_hash ((const char*) stack->data, size_data);
+    230: 
+    231:     return 0;
+
+# 2 0x00402148 in D:\project\assembler\proc.exe: Stack_resize_() at D:/project/assembler/src/stack/stack.cpp (451):
+
+    449:     }
+    450: 
+=>  451:     Stack_hash_save (stack);
+    452: 
+    453:     return CHANGE;
+
+# 3 0x00401EBC in D:\project\assembler\proc.exe: Stack_pop_() at D:/project/assembler/src/stack/stack.cpp (378):
+
+    376:     }
+    377: 
+=>  378:     int ver_status = Stack_resize (stack, Check_resize (stack));
+    379:     switch (ver_status)
+    380:     {
+
+# 4 0x0043121C in D:\project\assembler\proc.exe: Comands_exe() at D:/project/assembler/proc/../architecture/cmd.h (51):
+
+     49: })
+     50: 
+=>   51: DEF_CMD (SUB, 4, 0, {
+     52:     
+     53:     elem val1 = 0, val2 = 0;
+
+# 5 0x00430F1C in D:\project\assembler\proc.exe: Run_proc() at D:/project/assembler/proc/proc.cpp (252):
+
+    250:     }
+    251: 
+=>  252:     if (Comands_exe (&cpu))
+    253:     {
+    254:         Log_report ("command processing failed\n");
+
+# 6 0x004015BE in D:\project\assembler\proc.exe: main() at D:/project/assembler/proc/main_cpu.cpp (45):
+
+     43:     }
+     44: 
+=>   45:     if (Run_proc (fdin))
+     46:     {
+     47:         Log_report ("Processor error\n");
+
+--------------------------------------------------
+Developed with:
+
+The Dumb Artist Library (TX Library)
+TXLib [Ver: 00173a, Rev: 171, Date: 2022-07-23 02:08:28 +0400]
+Copyright (C) Ded (Ilya Dedinsky, http://txlib.ru) <mail@txlib.ru>
+See license on: http://txlib.ru
+
+TXLib file:	C:\Users\DNS\Downloads\TX\TXLib.h
+Compiled:	Oct 24 2022 01:29:30, GNU g++ 6.3.0, std=201402L, MinGW Runtime 5.0, 32-bit, DEBUG
+Started:	Oct 24 2022 01:29:38
+
+Run file:	D:\project\assembler\proc.exe
+Directory:	D:\project\assembler
+
+--------------------------------------------------

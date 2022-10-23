@@ -9,11 +9,13 @@
 #include "../src/log_info/log_errors.h"
 
 
+//======================================================================================
+
 int Label_init (Label *label, const int ip_cmd, const char *name, const int bypass) 
 {
     assert (label != nullptr && "pointer to nullptr label");
 
-    label->string_code = (unsigned int) Get_str_hash (name);
+    label->string_hash = Get_str_hash (name);
     
     label->ptr_jump = ip_cmd;
 
@@ -22,23 +24,29 @@ int Label_init (Label *label, const int ip_cmd, const char *name, const int bypa
     return 0;
 }
 
-int Check_reserved_name (const char *name_new_label, const unsigned int *cmd_code)
+//======================================================================================
+
+int Check_reserved_name (const char *name_new_label, const uint64_t *cmd_hash_tabel)
 {
     assert (name_new_label != nullptr && "name_new_label is nullptr");
 
-    unsigned int str_hash = (unsigned int) Get_str_hash (name_new_label);
+    uint64_t str_hash = Get_str_hash (name_new_label);
 
     for (int ip_com = 0; ip_com < Max_cnt_cmd; ip_com++)
-        if (cmd_code[ip_com] == str_hash)
+        if (cmd_hash_tabel[ip_com] == str_hash)
             return 1;
 
     return 0;
 }
 
+//======================================================================================
+
 int Check_cnt_labels (Label_table *label_table)
 {
     return label_table->cnt_labels == label_table->label_capacity;
 }
+
+//======================================================================================
 
 int Recalloc_cnt_labels (Label_table *label_table)
 {
@@ -59,16 +67,18 @@ int Recalloc_cnt_labels (Label_table *label_table)
     return 0;
 }
 
+//======================================================================================
+
 int Find_label (Label_table *label_table, const char *name_new_label) 
 {
     assert (label_table != nullptr && "label_tablel is nullptr");
     assert (name_new_label != nullptr && "name_new_label is nullptr");
 
-    unsigned int new_string_hash = (unsigned int) Get_str_hash (name_new_label);
+    uint64_t new_string_hash = Get_str_hash (name_new_label);
 
     for (int ip_label = 0; ip_label < label_table->cnt_labels; ip_label++) 
-    {
-        if ((label_table->labels + ip_label)->string_code == new_string_hash) 
+    {   
+        if ((label_table->labels + ip_label)->string_hash == new_string_hash) 
         {
             return ip_label;
         }
@@ -77,24 +87,28 @@ int Find_label (Label_table *label_table, const char *name_new_label)
     return Not_init_label;
 }
 
-unsigned int Get_str_hash (const char *str)
+//======================================================================================
+
+uint64_t Get_str_hash (const char *str) 
 {
     assert (str != nullptr && "str is nullptr");
     
     char *str_= strdup (str);
-    int len = 0;
-    while (*(str_+ len) != '\0')
+    int ip = 0;
+    while (*(str_+ ip) != '\0')
     {
-        str_[len] = (char) tolower (str_[len]);
-        len++;
+        str_[ip] = (char) tolower (str_[ip]);
+        ip++;
     }
 
-    unsigned int hash = (unsigned int) Get_hash (str_, sizeof (str_));
+    uint64_t hash = Get_hash (str_, sizeof (str_));
     
     free (str_);
 
     return hash;
 }
+
+//======================================================================================
 
 int Ctor_label_tabel (Label_table *label_table)
 {
@@ -115,6 +129,8 @@ int Ctor_label_tabel (Label_table *label_table)
     return 0;
 }
 
+//======================================================================================
+
 int Dtor_label_tabel (Label_table *label_table)
 {
     assert (label_table != nullptr && "str is nullptr");
@@ -132,3 +148,5 @@ int Dtor_label_tabel (Label_table *label_table)
 
     return 0;
 }
+
+//======================================================================================

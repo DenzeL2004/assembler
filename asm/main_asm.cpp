@@ -45,12 +45,14 @@ int main (int argc, char *argv[])
     if (fdin < 0)
     {
         Log_report ("Input file not opened\n");
+        Err_report ();
         return -1;
     }
 
     if (Convert_operations (fdin, output_file))
     {
         Log_report ("Assembler error\n");
+        Err_report ();
         return -1; 
     }
 

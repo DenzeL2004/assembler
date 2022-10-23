@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <TXLib.h>
 
 
 #include "../src/Generals_func/generals.h"
@@ -270,21 +271,10 @@ int Run_proc (int fdin)
 
 //======================================================================================
 
-#define DEF_CMD_JUMP(name, num, oper, ...)                          \                                       
+#define DEF_CMD_JUMP(name, num, ...)                                \                                       
         case num:                                                   \
         {                                                           \
-            if (num == CMD_JUMP || num == CMD_CALL){                \
-                __VA_ARGS__                                         \
-            } else {                                                \   
-                elem val1 = 0, val2 = 0;                            \
-                GET_VAL_FROM_STACK (&val1);                         \
-                GET_VAL_FROM_STACK (&val2);                         \
-                                                                    \   
-                if (val1 oper val2)                                 \
-                    CPU_CODE = (ptr_beg_code + (int) *(elem*) CPU_CODE);   \                              
-                else                                                \
-                    CPU_CODE += sizeof (elem);                      \
-            }                                                       \
+            __VA_ARGS__                                             \            
             break;                                                  \   
         }                                                       
 
@@ -393,14 +383,26 @@ static int Show_ram (Cpu_struct *cpu)
 {
     assert (cpu != nullptr && "cpu is nullptr");
 
+    txCreateWindow (400, 300);
+
     for (int ln = 0; ln < Ln_ram; ln++)
     {
         for (int cl = 0; cl < Cl_ram; cl++)
         {
             int adress = ln * Cl_ram + cl;
 
-            if (cpu->ram[adress]) Print_colour (GREEN, "*");
-            else                  Print_colour (RED,   "*");
+            if (cpu->ram[adress])
+            { 
+                Print_colour (GREEN, "* ");
+                txSetPixel (200 + cl, 150 + ln, TX_CYAN);
+            }
+
+            else
+            {
+                Print_colour (RED,   "* ");
+                txSetPixel (200 + cl, 150 + ln, TX_RED);
+            }
+            
         }
 
         printf ("\n");
