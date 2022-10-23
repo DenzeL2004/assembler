@@ -15,6 +15,10 @@ const int Min_stack_size = 5;
 
 const int Program_delay = 300;
 
+const int Window_height = 400;
+
+const int Window_width  = 300;
+
 enum Processor_err
 {
     PROC_CTOR_ERR           = -1,

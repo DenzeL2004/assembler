@@ -1,0 +1,89 @@
+in
+in
+in
+
+in
+in
+pop rmx
+pop rnx
+
+pop rcx
+pop rbx
+pop rax
+
+push 0
+
+pop rkx
+
+
+loop:
+
+    push rkx        //finding_the_current_line
+    push rmx
+    div
+
+    pop rfx         //current_line
+
+
+    push rkx        //finding_the_current_column
+    push rmx
+    push rfx
+
+    mult
+    sub
+
+    pop rgx         //current_column
+
+    push rcx
+    push rcx 
+    mult            //Second_degree_radius
+
+
+    push rax        
+    push rfx
+    sub             //X_coordinate
+
+    push rax
+    push rfx
+    sub             //X_coordinate
+
+    mult            //X^2_coordinate
+
+
+    push rbx        
+    push rgx
+    sub             //Y_coordinate
+
+    push rbx
+    push rgx
+    sub             //Y_coordinate
+
+    mult            //Y^2_coordinate
+
+    add
+
+
+    ja NOT_ADD_TO_RAM
+        push rkx
+        push 1
+        pop [rkx]
+
+    NOT_ADD_TO_RAM:
+    
+
+    push rmx
+    push rnx
+    mult
+
+    push rkx        //loop_exit
+    push 1
+    add
+
+    pop rkx
+
+    push rkx
+
+jb loop
+
+SHOWRAM
+HLT

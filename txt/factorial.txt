@@ -1,0 +1,47 @@
+in
+
+call FACTORIAL
+
+out
+hlt
+
+FACTORIAL:
+
+pop rdx
+pop rax
+
+push rdx
+push rax
+
+    dup                      //Checking_what_is_asked_to_calculate_the_factorial_of_1
+    push 1
+
+jl SKIP_MULT                //End_Check
+
+
+dup
+push 1
+sub
+
+dup
+push 1
+
+
+jl END_FACTORIAL
+
+    call FACTORIAL
+
+END_FACTORIAL:
+
+mult
+
+SKIP_MULT:
+
+pop rax
+pop rdx
+
+push rax
+push rdx
+
+
+ret

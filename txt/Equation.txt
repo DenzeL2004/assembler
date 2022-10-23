@@ -1,0 +1,192 @@
+in
+pop rax
+
+in
+pop rbx
+
+in
+pop rcx
+
+
+push rax
+push 0
+jl LINEAR
+
+push rbx
+push 0
+jl CF_B_IS_ZERO
+
+push rcx
+push 0
+jl CF_C_IS_ZERO
+
+CALL GET_DISCRIMINANT
+
+push 0
+push rdx
+
+jb ZERO_ROOT   //discriminant_is_negative
+
+
+push rdx
+sqrt
+
+
+pop [4]         //Sqrt_discriminant
+
+push 0
+push rbx
+sub
+
+pop [2]         //change_sign_b
+
+
+push [2]
+push [4]
+add
+
+push rax
+push 2
+mult
+
+div             //Firs_root
+
+push rdx
+push 0
+
+jl ONE_ROOT   
+
+push [2]
+push [4]
+sub
+
+push rax
+push 2
+mult
+
+div             //Second_root
+
+jump TWO_ROOT
+
+hlt
+
+TWO_ROOT:
+    push 2
+    out
+    
+    out
+    out
+    hlt
+
+ONE_ROOT:
+    push 1
+    out
+    
+    out
+    hlt
+
+ZERO_ROOT:
+    push 0
+
+    out
+    hlt
+
+LINEAR:
+    push rbx
+    push 0
+
+    jl ZERO_ROOT
+
+    push 1
+    out
+
+    push 0
+    push rcx
+    sub
+
+    push rbx
+
+    div
+
+    jump ONE_ROOT
+    hlt
+
+CF_B_IS_ZERO:            //Coefficient_b_is_zero
+    push rcx
+
+    dup
+    push 0
+
+    jl ONE_ROOT         //Coefficient_c_is_zero
+
+    dup                 
+    push rax
+    mult
+
+    push 0              //Check_whether_coefficients_are_of_the_same_sign
+
+    jb ZERO_ROOT        //Coefficient_c_greater_than_zero
+
+    pop rcx
+    
+    push 0
+    push rcx
+    sub                 //sign_Coefficient_c_change
+
+    push rax
+    div
+
+    sqrt
+    dup
+
+
+    pop [0]              //finding_the_second_root
+    
+    push 0
+    push [0]
+    sub 
+
+
+    jump TWO_ROOT
+
+    hlt
+
+CF_C_IS_ZERO:
+
+    push rbx
+    push 0
+
+    jl ONE_ROOT         //Coefficient_b_is_zero
+
+    push 0              //First_root
+
+    push 0              
+    push rbx
+    sub   
+    push rax
+    div                 //Second_root
+    
+    jump TWO_ROOT
+
+    hlt
+
+GET_DISCRIMINANT:
+
+    push rbx
+    push rbx
+    mult
+
+    push rax
+    push rcx
+    mult
+
+    push 4
+    mult
+
+    sub
+
+    pop rdx
+
+    ret
+
+
