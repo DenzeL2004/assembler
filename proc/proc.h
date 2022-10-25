@@ -17,7 +17,7 @@ const int Program_delay = 300;
 
 const int Window_height = 400;
 
-const int Window_width  = 300;
+const int Window_width  = 100;
 
 enum Processor_err
 {

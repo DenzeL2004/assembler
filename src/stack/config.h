@@ -3,12 +3,15 @@
 
 #include <stdint.h>
 
-typedef int elem;
+typedef double elem;
 
 
 #define USE_LOG  //<- connect when we use logs
 
+//#define USE_STACK_DUMP
+
 #define DEBUG    //<- Use of protection
+
 
 
 #ifdef DEBUG
@@ -33,6 +36,6 @@ const int POISON_PTR = 4242564;   //<- fill pointer with poison value
 const elem NOT_ALLOC_PTR = 666666; //<- fill in the value of the pointer to which we are going to allocate dynamic memory
 
 
-#define PRINT_TYPE "d"               //<- specifier character to print elem
+#define PRINT_TYPE "lf"               //<- specifier character to print elem
 
 #endif

@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-
 #include "assembler.h"
 #include "../src/Generals_func/generals.h"
 #include "../src/log_info/log_errors.h"
@@ -19,7 +18,7 @@ int main (int argc, char *argv[])
     #endif 
 
     char *input_file  = nullptr;
-    char *output_file = (char*) Default_name_output_file;
+    char *output_file = (char *) Default_name_output_file;
 
     switch (argc)
     {

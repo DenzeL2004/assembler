@@ -9,11 +9,8 @@ FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equa
 proc:  obj/main_cpu.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/proc.o obj/labels.o
 	g++ obj/main_cpu.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/proc.o obj/labels.o -o proc
 
-asm: obj/main_asm.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/labels.o
-	g++ obj/main_asm.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/labels.o -o assembler
 
-
-obj/main_cpu.o: proc/main_cpu.cpp
+obj/main_cpu.o: proc/main_cpu.cpp proc/proc.h architecture/architecture.h
 	g++ proc/main_cpu.cpp -c -o obj/main_cpu.o $(FLAGS)
 
 obj/proc.o: proc/proc.cpp proc/proc.h architecture/architecture.h architecture/cmd.h
@@ -22,7 +19,11 @@ obj/proc.o: proc/proc.cpp proc/proc.h architecture/architecture.h architecture/c
 
 
 
-obj/main_asm.o: asm/main_asm.cpp
+asm: obj/main_asm.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/labels.o
+	g++ obj/main_asm.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/labels.o -o assembler
+
+
+obj/main_asm.o: asm/main_asm.cpp asm/assembler.h architecture/architecture.h
 	g++ asm/main_asm.cpp -c -o obj/main_asm.o $(FLAGS)
 
 obj/assembler.o: asm/assembler.cpp asm/assembler.h architecture/architecture.h architecture/cmd.h 

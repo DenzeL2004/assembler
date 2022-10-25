@@ -1,7 +1,6 @@
 #ifndef _ASSEMBLER_H_
 #define _ASSEMBLER_H_
 
-
 #include "../architecture/architecture.h"
 #include "labels.h"
 
@@ -36,7 +35,7 @@ struct Asm_struct
 
     Label_table label_table = {};
 
-    uint64_t cmd_hash_tabel[Max_cnt_cmd];
+    int64_t cmd_hash_tabel[Max_cnt_cmd];
 
     char cur_bypass = 0;
 };

@@ -1,89 +1,100 @@
 in
-in
-in
+pop rax     //X_coordinate_of_the_center_of_the_circle
 
 in
-in
-pop rmx
-pop rnx
+pop rbx     //Y_coordinate_of_the_center_of_the_circle
 
-pop rcx
-pop rbx
-pop rax
+in
+pop rcx     //Radius_of_circle
+
+in
+pop rnx     //frame_height
+
+in
+pop rmx     //frame_width
+
 
 push 0
-
-pop rkx
-
-
-loop:
-
-    push rkx        //finding_the_current_line
-    push rmx
-    div
-
-    pop rfx         //current_line
+pop rix     //X_coordinate_counter
 
 
-    push rkx        //finding_the_current_column
-    push rmx
-    push rfx
+LOOP_X:
 
-    mult
-    sub
+    push 0
+    pop rjx     //Y_coordinate_counter
 
-    pop rgx         //current_column
+    LOOP_Y:
 
-    push rcx
-    push rcx 
-    mult            //Second_degree_radius
+        push rcx
+        push rcx 
+        mult            //Second_degree_radius
 
+        push rax        
+        push rix
+        sub             //X_coordinate
 
-    push rax        
-    push rfx
-    sub             //X_coordinate
+        push rax
+        push rix
+        sub             //X_coordinate
 
-    push rax
-    push rfx
-    sub             //X_coordinate
-
-    mult            //X^2_coordinate
+        mult            //X^2_coordinate
 
 
-    push rbx        
-    push rgx
-    sub             //Y_coordinate
+        push rbx        
+        push rjx
+        sub             //Y_coordinate
 
-    push rbx
-    push rgx
-    sub             //Y_coordinate
+        push rbx
+        push rjx
+        sub             //Y_coordinate
 
-    mult            //Y^2_coordinate
+        mult            //Y^2_coordinate
 
-    add
+        add
+
+        //dup
+        //out
 
 
-    ja NOT_ADD_TO_RAM
-        push rkx
+        ja NOT_ADD_TO_RAM   //X^2+Y^2<=R^2
+            push rix
+            push rnx
+            mult
+
+            push rjx
+            add         //Ip_ram
+
+            pop rkx
+
+            push 1
+            pop [rkx]       
+
+        
+        NOT_ADD_TO_RAM:
+        
+
+        push rjx
         push 1
-        pop [rkx]
+        add         
 
-    NOT_ADD_TO_RAM:
-    
+        pop rjx     //Y_counter++
 
-    push rmx
-    push rnx
-    mult
+        push rmx    //Y_counter_lower_frame_height
+        push rjx
 
-    push rkx        //loop_exit
+    jb LOOP_Y
+
     push 1
-    add
+    push rix
+    
+    add         //X_counter++
 
-    pop rkx
+    pop rix
 
-    push rkx
+    push rnx    //X_counter_lower_frame_width
+    push rix
+    
+jb LOOP_X
 
-jb loop
-
-SHOWRAM
-HLT
+showram
+hlt

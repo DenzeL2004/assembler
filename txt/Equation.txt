@@ -1,74 +1,45 @@
-in
-pop rax
+call MAIN 
+hlt 
 
-in
-pop rbx
+MAIN:                         
+    call GET_ARGS
+    call SOLVE 
 
-in
-pop rcx
+ret
 
+GET_ARGS:
 
-push rax
-push 0
-jl LINEAR
+    in
+    pop rax         //Coefficient_a
 
-push rbx
-push 0
-jl CF_B_IS_ZERO
+    in
+    pop rbx         //Coefficient_b
 
-push rcx
-push 0
-jl CF_C_IS_ZERO
+    in
+    pop rcx         //Coefficient_c
 
-CALL GET_DISCRIMINANT
+ret
 
-push 0
-push rdx
+SOLVE:
 
-jb ZERO_ROOT   //discriminant_is_negative
+    push rax
+    push 0
+    je LINEAR           //Coefficient_a_is_zero
 
+    push rbx
+    push 0
+    je CF_B_IS_ZERO    //Coefficient_b_is_zero
 
-push rdx
-sqrt
-
-
-pop [4]         //Sqrt_discriminant
-
-push 0
-push rbx
-sub
-
-pop [2]         //change_sign_b
+    push rcx
+    push 0
+    je CF_C_IS_ZERO     //Coefficient_c_is_zero
 
 
-push [2]
-push [4]
-add
+    call SQUARE_SOLVE
 
-push rax
-push 2
-mult
+ret
 
-div             //Firs_root
 
-push rdx
-push 0
-
-jl ONE_ROOT   
-
-push [2]
-push [4]
-sub
-
-push rax
-push 2
-mult
-
-div             //Second_root
-
-jump TWO_ROOT
-
-hlt
 
 TWO_ROOT:
     push 2
@@ -91,14 +62,26 @@ ZERO_ROOT:
     out
     hlt
 
+INF_ROOT:
+    push 9999
+
+    out
+    hlt
+
 LINEAR:
     push rbx
     push 0
 
-    jl ZERO_ROOT
+    jm SKIP_C_CHECK
 
-    push 1
-    out
+        push rcx
+        push 0
+
+        je INF_ROOT
+
+        jump ZERO_ROOT
+
+    SKIP_C_CHECK:
 
     push 0
     push rcx
@@ -117,7 +100,7 @@ CF_B_IS_ZERO:            //Coefficient_b_is_zero
     dup
     push 0
 
-    jl ONE_ROOT         //Coefficient_c_is_zero
+    je ONE_ROOT         //Coefficient_c_is_zero
 
     dup                 
     push rax
@@ -156,7 +139,7 @@ CF_C_IS_ZERO:
     push rbx
     push 0
 
-    jl ONE_ROOT         //Coefficient_b_is_zero
+    je ONE_ROOT         //Coefficient_b_is_zero
 
     push 0              //First_root
 
@@ -174,19 +157,69 @@ GET_DISCRIMINANT:
 
     push rbx
     push rbx
-    mult
+    mult                //b^2
 
     push rax
     push rcx
     mult
 
     push 4
-    mult
+    mult                //4*a*c
 
     sub
 
-    pop rdx
+    pop rdx             //discriminant
 
     ret
 
+SQUARE_SOLVE:
 
+call GET_DISCRIMINANT
+
+    push 0
+    push rdx
+
+    jb ZERO_ROOT   //discriminant_is_negative
+
+
+    push rdx
+    sqrt
+
+
+    pop [4]         //Sqrt_discriminant
+
+    push 0
+    push rbx
+    sub
+
+    pop [2]         //change_sign_b
+
+
+    push [2]
+    push [4]
+    add
+
+    push rax
+    push 2
+    mult
+
+    div             //First_root
+
+    push rdx
+    push 0
+
+    je ONE_ROOT   
+
+    push [2]
+    push [4]
+    sub
+
+    push rax
+    push 2
+    mult
+
+    div             //Second_root
+
+    jump TWO_ROOT
+
+ret

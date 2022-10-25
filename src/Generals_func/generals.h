@@ -48,7 +48,8 @@ enum Errors {
     ERR_WRITING             = -8,          ///< Data writing failed
     ERR_MANY_ARGUMENTS      = -9,          ///< Too many values on the command line
     ERR_PARSING             = -10,         ///< Parsing does not succeeded
-    ERR_RE_ClEARING_MEMORY  = -13
+    ERR_RE_ClEARING_MEMORY  = -13,
+    ERR_NULLPTR             = -11,
 };
 
 enum Comparison{

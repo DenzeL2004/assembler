@@ -1,63 +1,21 @@
 PUSH 1
 PUSH 10
 PUSH 10
-push 3
-PUSH 10
-PUSH 1
-PUSH 10
-PUSH 10
-push 3
-PUSH 10
-PUSH 1
-PUSH 10
-PUSH 10
-push 3
-PUSH 10
-PUSH 1
-PUSH 10
-PUSH 10
-push 3
-PUSH 10
-PUSH 1
-PUSH 10
-PUSH 10
-push 3
-PUSH 10
-mult
-mult
-mult
+push 10
 
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
-mult
+IN
 
 
+pop rax  //Save_10
 
-pop rax
-
-pop [rax+15]
-
-pop [2]
-
-pop [4]
+pop [rax+15] //
 
 
+push [25]
+out
 
+push [rax+15]
+out
 
-SHOWRAM
-push [4]
-
-OUT
+out
 HLT

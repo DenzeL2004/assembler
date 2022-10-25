@@ -1,8 +1,7 @@
 #ifndef _ARCHITECTURE_H_
 #define _ARCHITECTURE_H_
 
-typedef int elem;
-
+typedef double elem;
 
 static const char *Default_name_output_file = "out.bin";
 
@@ -38,7 +37,7 @@ enum Regs
 
 
 
-#define DEF_CMD(name, num, ...)      \              
+#define DEF_CMD(name, num, ...)      \         
     CMD_##name = (num),
 
 #define DEF_CMD_JUMP(name, num, ...) \
@@ -54,7 +53,7 @@ enum Assembler_commands
 #undef DEF_CMD_JUMP
 
 
-#define USE_TYPE "d"               //<- specifier character to print/scan elem
+#define USE_TYPE "lf"               //<- specifier character to print/scan elem
 
 
 #endif //#endif _ARCHITECTURE_H_

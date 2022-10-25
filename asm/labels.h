@@ -28,7 +28,7 @@ enum Label_err
 
 struct Label 
 {
-    uint64_t string_hash = 0;
+    int64_t string_hash = 0;
     elem ptr_jump    = 0;
     
     int bypass = 0; 
@@ -46,7 +46,7 @@ struct Label_table
 int Label_init (Label *label, const int ip_cmd, const char *name, const int bypass);
 
 
-int Check_reserved_name (const char *name_new_label, const uint64_t *cmd_hash_tabel);
+int Check_reserved_name (const char *name_new_label, const int64_t *cmd_hash_tabel);
 
 
 int Check_cnt_labels (Label_table *label_table);
@@ -58,7 +58,7 @@ int Recalloc_cnt_labels (Label_table *label_table);
 int Find_label (Label_table *label_table, const char *name_new_label);
 
 
-uint64_t Get_str_hash (const char *str);
+int64_t Get_str_hash (const char *str);
 
 
 int Ctor_label_tabel (Label_table *label_table);

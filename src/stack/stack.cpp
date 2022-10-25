@@ -573,6 +573,8 @@ uint64_t Stack_dump_ (Stack *stack,
 
     uint64_t err_code = Stack_check (stack);
 
+    #ifdef USE_STACK_DUMP
+
     FILE *fp_logs = Get_log_file_ptr ();
 
     fprintf (fp_logs, "=================================================\n\n");
@@ -671,6 +673,8 @@ uint64_t Stack_dump_ (Stack *stack,
     }
 
     fprintf (fp_logs, "=================================================\n\n");
+
+    #endif
 
     return err_code;
 }

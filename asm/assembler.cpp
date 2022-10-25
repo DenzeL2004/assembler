@@ -267,10 +267,9 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
 
     while (ip_line < commands_line->cnt_lines)
     {
-        char        *cur_line      = commands_line->lines[ip_line].str;
-        int          cur_len       = commands_line->lines[ip_line].len_str;
-        uint64_t cur_line_hash = Get_str_hash (cur_line);
-        
+        char    *cur_line      = commands_line->lines[ip_line].str;
+        int      cur_len       = commands_line->lines[ip_line].len_str;
+
         if (cur_len == 0)
         {
             ip_line++;
@@ -282,6 +281,8 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
             ip_line++;
             continue;
         }
+
+        int64_t cur_line_hash = Get_str_hash (cur_line);
 
         if (cur_line[cur_len - 1] == ':')
         {
@@ -345,7 +346,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
         ip_line++;
     }
 
-    asmst->cnt_bytes = asmst->code-ptr_beg_code;
+    asmst->cnt_bytes = asmst->code - ptr_beg_code;
     asmst->code = ptr_beg_code;
 
     return asmst->cnt_bytes;
@@ -396,14 +397,14 @@ static int Def_args
     }
 
     unsigned char arg_reg = 0;
-    elem           arg_num = 0;
+    elem          arg_num = 0;
 
     char *cur_lex = strtok (str, "[]+ "); 
     while (cur_lex != nullptr)
     {
         if (cur_lex[0] == 'r' && cur_lex[2] == 'x' && cur_lex[1] - 'a' <= Cnt_reg)
         {
-            arg_reg = cur_lex[1] - 'a';
+            arg_reg = (unsigned char) (cur_lex[1] - 'a');
             cmd |= ARG_REG;
         }
         
@@ -430,12 +431,31 @@ static int Def_args
 
     SET_NUM_CMD (ASM_CODE, cmd, sizeof (char));
 
-    if (cmd & ARG_IMM)
-        SET_ARGS (ASM_CODE, arg_num, sizeof (elem));
+    if (cmd & ARG_RAM)
+    {
+        if (cmd & ARG_IMM)
+            SET_ARGS (ASM_CODE, arg_num, sizeof (elem));
 
-    if (cmd & ARG_REG)
-        SET_NUM_CMD (ASM_CODE, arg_reg, sizeof (char));
-    
+        if (cmd & ARG_REG)
+            SET_NUM_CMD (ASM_CODE, arg_reg, sizeof (char));
+    }
+
+    else
+    {
+        if ((cmd & ARG_IMM) && (cmd & ARG_REG))
+        {
+            Log_report ("Incorrect entry command\n");
+            Err_report ();
+
+            return DEF_ARGS_ERR; 
+        }
+
+        if (cmd & ARG_IMM)
+            SET_ARGS (ASM_CODE, arg_num, sizeof (elem));
+
+        if (cmd & ARG_REG)
+            SET_NUM_CMD (ASM_CODE, arg_reg, sizeof (char));
+    }
     
     return 0;
 }

@@ -26,11 +26,11 @@ int Label_init (Label *label, const int ip_cmd, const char *name, const int bypa
 
 //======================================================================================
 
-int Check_reserved_name (const char *name_new_label, const uint64_t *cmd_hash_tabel)
+int Check_reserved_name (const char *name_new_label, const int64_t *cmd_hash_tabel)
 {
     assert (name_new_label != nullptr && "name_new_label is nullptr");
 
-    uint64_t str_hash = Get_str_hash (name_new_label);
+    int64_t str_hash = Get_str_hash (name_new_label);
 
     for (int ip_com = 0; ip_com < Max_cnt_cmd; ip_com++)
         if (cmd_hash_tabel[ip_com] == str_hash)
@@ -74,7 +74,7 @@ int Find_label (Label_table *label_table, const char *name_new_label)
     assert (label_table != nullptr && "label_tablel is nullptr");
     assert (name_new_label != nullptr && "name_new_label is nullptr");
 
-    uint64_t new_string_hash = Get_str_hash (name_new_label);
+    int64_t new_string_hash = Get_str_hash (name_new_label);
 
     for (int ip_label = 0; ip_label < label_table->cnt_labels; ip_label++) 
     {   
@@ -89,21 +89,24 @@ int Find_label (Label_table *label_table, const char *name_new_label)
 
 //======================================================================================
 
-uint64_t Get_str_hash (const char *str) 
+int64_t Get_str_hash (const char *str) 
 {
     assert (str != nullptr && "str is nullptr");
     
-    char *str_= strdup (str);
+    int prime_num = 239017, mod = 1e9+7;
+
+    int64_t hash = 0, degree = 1;
     int ip = 0;
-    while (*(str_+ ip) != '\0')
+
+    while (*(str + ip) != '\0') 
     {
-        str_[ip] = (char) tolower (str_[ip]);
+        unsigned char ch = (unsigned char) tolower(*(str + ip));
+        
+        hash = (hash + degree * ch) % mod;
+        degree = (degree * prime_num) % mod;
+
         ip++;
     }
-
-    uint64_t hash = Get_hash (str_, sizeof (str_));
-    
-    free (str_);
 
     return hash;
 }

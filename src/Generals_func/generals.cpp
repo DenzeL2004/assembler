@@ -92,8 +92,8 @@ uint64_t Get_hash (const char *data, uint64_t len)
     hash += (hash << 3);
     hash ^= (hash >> 11);
     hash += (hash << 15);
-    
-    return hash;
+	
+	return hash;
 }
 
 void Print_colour (char const colour[], char const *str, ...){

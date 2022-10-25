@@ -103,16 +103,10 @@ int Stack_push_ (Stack *stack, elem  val);
 
 int Stack_pop_  (Stack *stack, elem *val);
 
-#ifdef USE_LOG
 
-    #define Stack_dump(stack)                       \
-            Stack_dump_ (stack, LOG_ARGS)
-
-#else  
     
-    #define Stack_dump(stack)                   
-
-#endif
+#define Stack_dump(stack)                       \
+        Stack_dump_ (stack, LOG_ARGS)           
 
 uint64_t Stack_dump_ (Stack *stack, LOG_PARAMETS);
 
