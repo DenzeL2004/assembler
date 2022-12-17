@@ -47,13 +47,14 @@ obj/stack.o: src\stack\stack.cpp src\stack\stack.h src\stack\config.h
 obj/generals.o: src\Generals_func\generals.cpp
 	g++ src\Generals_func\generals.cpp -c -o obj/generals.o $(FLAGS)
 
+
 .PHONY: cleanup mkdirectory
 
 mkdirectory:
-	mkdir -p obj
+	mkdir -p obj;
 
 mkdirectorybin:
 	mkdir -p bin
 
 cleanup:
-	rm *.o assembler
+	rm obj/*.o
