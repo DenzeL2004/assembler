@@ -187,6 +187,9 @@ int Convert_operations (int fdin, const char *output_file)
         return CONVERT_COMMAND_ERR;
     }
 
+    for (int i = 0; i < asmst.cnt_bytes; i++)
+       printf ("%d: %d\n", i, *(asmst.code + i));
+
     if (Write_convert_file (&asmst, output_file))
     {
         Log_report ("An error occurred while writing to the output file\n");
@@ -270,7 +273,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
         char    *cur_line      = commands_line->lines[ip_line].str;
         int      cur_len       = commands_line->lines[ip_line].len_str;
 
-        if (cur_len == 0)
+        if (cur_len == 0 || cur_line[0] == '\t')
         {
             ip_line++;
             continue;
@@ -282,13 +285,15 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
             continue;
         }
 
+        printf ("lex %s\n", cur_line);
+
         int64_t cur_line_hash = Get_str_hash (cur_line);
 
         if (cur_line[cur_len - 1] == ':')
         {
             char *name_label = commands_line->lines[ip_line].str;
             name_label [cur_len - 1] = '\0';
-
+    
             if (Check_reserved_name (name_label, asmst->cmd_hash_tabel))
             {
                 Log_report ("The label is trying to name a reserved command\n");
@@ -347,6 +352,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
     }
 
     asmst->cnt_bytes = asmst->code - ptr_beg_code;
+
     asmst->code = ptr_beg_code;
 
     return asmst->cnt_bytes;
@@ -468,30 +474,28 @@ static int Def_jump_argument (Asm_struct *asmst, char *name_label)
     assert (name_label != nullptr && "name_label is nullptr");
 
     if (Check_reserved_name (name_label, asmst->cmd_hash_tabel))                                
-        {                                                                                           
-            Log_report ("The label is trying to name a reserved command:"                           
-                                                        "%s\n", name_label);                          
-            Err_report ();                                                                          
-                                                                                                    
-            return CONVERT_COMMAND_ERR;                                                             
-        }                                                                                           
-                                                                                                    
-        int ip_jump = Find_label (&asmst->label_table, name_label);                                 
-                                                                                                    
-        if (ip_jump == Not_init_label && asmst->cur_bypass == SECOND)                                      
-        {                                                                                           
-            Log_report ("Undefined label: %s\n", name_label);                                                       
-            Err_report ();                                                                          
-                                                                                                    
-            return CONVERT_COMMAND_ERR;                                                             
-        }                                                                                           
-                                                                                                            
-        if (ip_jump == Not_init_label)                                                              
-            SET_ARGS (asmst->code, (elem) ip_jump, sizeof (elem));                                            
-        else                                                                                        
-            SET_ARGS (asmst->code, (asmst->label_table.labels + ip_jump)->ptr_jump, sizeof (elem));  
-
-        return 0;  
+    {                                                                                           
+        Log_report ("The label is trying to name a reserved command:"                           
+                                                    "%s\n", name_label);                          
+        Err_report ();                                                                                                                                       
+        return CONVERT_COMMAND_ERR;                                                             
+    }                                                                                           
+                                                                                                
+    int ip_jump = Find_label (&asmst->label_table, name_label);                                 
+                                                                                                
+    if (ip_jump == Not_init_label && asmst->cur_bypass == SECOND)                                      
+    {                                                                                           
+        Log_report ("Undefined label: %s\n", name_label);                                                       
+        Err_report ();                                                                          
+                                                                                                
+        return CONVERT_COMMAND_ERR;                                                             
+    }                                                                                           
+                                                                                                        
+    if (ip_jump == Not_init_label)                                                              
+        SET_ARGS (asmst->code, (elem) ip_jump, sizeof (elem));                                            
+    else                                                                                        
+        SET_ARGS (asmst->code, (asmst->label_table.labels + ip_jump)->ptr_jump, sizeof (elem)); 
+    return 0;  
 }
 
 //======================================================================================
@@ -500,9 +504,9 @@ static int Write_convert_file (const Asm_struct *asmst, const char *output_file)
 {
     assert (asmst != nullptr && "asmst is nullptr");
 
-    int fdout = creat (output_file, S_IRWXU);
+    FILE *fpout = Open_file_ptr (output_file, "wb");
 
-    if (fdout < 0)
+    if (Check_nullptr (fpout))
     {
         Log_report ("Descriptor converted file did't create\n");
         Err_report ();
@@ -510,39 +514,23 @@ static int Write_convert_file (const Asm_struct *asmst, const char *output_file)
         return CREAT_CONVERT_FILE_ERR;
     }
 
-    int bytes_written = 0, size_file = 0;
+    fwrite (&Sig, sizeof (int), 1, fpout);
 
-    bytes_written += write (fdout, &Sig, sizeof (int));
-    size_file     += sizeof (int);
+    fwrite (&Ver, sizeof (int), 1, fpout);
 
-    bytes_written += write (fdout, &Ver, sizeof (int)); 
-    size_file     += sizeof (int);
+    fwrite (&(asmst->cnt_bytes), sizeof(int), 1, fpout);
 
-    bytes_written += write (fdout, &(asmst->cnt_bytes), sizeof(int));
-    size_file     += sizeof (int);
+    fwrite (ASM_CODE, sizeof (unsigned char), asmst->cnt_bytes, fpout);
+    
 
-    bytes_written += write (fdout, ASM_CODE, 
-                            sizeof (unsigned char) * asmst->cnt_bytes);
-    size_file     += sizeof (unsigned char) * asmst->cnt_bytes;
-
-    if (size_file != bytes_written)
-    {
-        Log_report ("Error writing to binary file\n"
-                    "size_file = %d\nbytes_written = %d\n", 
-                     size_file,      bytes_written);
-        Err_report ();
-
-        return CREAT_CONVERT_FILE_ERR;
-    }    
-
-    if (close (fdout))
+    if (Close_file_ptr (fpout))
     {
         Log_report ("Converted file did't close");
         Err_report ();
 
         return CREAT_CONVERT_FILE_ERR;
     }
-    
+
     return 0;
 }
 

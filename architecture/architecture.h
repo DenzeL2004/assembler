@@ -3,7 +3,7 @@
 
 typedef double elem;
 
-static const char *Default_name_output_file = "out.bin";
+static const char *Default_name_output_file = "assembler_output.bin";
 
 static const int Ver = 1;
 

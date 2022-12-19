@@ -35,21 +35,21 @@ int main (int argc, char *argv[])
 
     system(("chcp " + std::to_string(CP_UTF8)).c_str());
 
-    int fdin = open (Input_file, O_RDONLY, 0);
-    if (fdin < 0)
+    FILE *fpin = Open_file_ptr (Input_file, "rb");
+    if (Check_nullptr (fpin))
     {
         Log_report ("File not opened after assembly\n");
         return -1;
     }
 
-    if (Run_proc (fdin))
+    if (Run_proc (fpin))
     {
         Log_report ("Processor error\n");
         return -1;
     }
 
 
-    close (fdin);
+    Close_file_ptr (fpin);
 
     #ifdef USE_LOG
         

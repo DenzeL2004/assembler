@@ -11,8 +11,8 @@
 #include <stdint.h>
 #include <fcntl.h>
 
-#define min(a, b) ((a) < (b) ? (а) : (b))
-#define max(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (а) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 /**
  * @def is_error
@@ -31,7 +31,11 @@ const char BLUE[]   =  "\033[1;36m";     ///< Blue colour
 const char GREEN[]  =  "\033[1;32m";     ///< Green colour
 const char YELLOW[] =  "\033[1;33m";     ///< Yellow colour
 
-const long double Eps = 1e-10; ///< Global constant equal to \f$\ 10^{-9}\f$
+static const long double Eps = 1e-10; ///< Global constant equal to \f$\ 10^{-9}\f$
+
+static const int Inf = 1e9+7; 
+
+static const int Init_buffer = 100; 
 
 /**
  * @enum Errors
@@ -50,6 +54,8 @@ enum Errors {
     ERR_PARSING             = -10,         ///< Parsing does not succeeded
     ERR_RE_ClEARING_MEMORY  = -13,
     ERR_NULLPTR             = -11,
+    ERR_FREE_MEMORY         = -14,
+    ERR_READ                = -15,
 };
 
 enum Comparison{
@@ -71,7 +77,17 @@ struct Options{
     bool info_option    = 0;
 };
 
-bool Check_nullptr  (void *ptr);
+inline bool Check_nullptr  (void *ptr)
+{
+	return (ptr == nullptr);
+}
+
+int inline Dump_func (int val)
+{
+    return val;
+}
+
+void My_flush ();
 
 bool Check_num (const char *str);
 
@@ -169,5 +185,9 @@ char Close_file_discriptor (int fd);
  * @return Returns zero if the variables have changed values 
  */
 int My_swap (void *obj1, void *obj2, size_t size_type);
+
+char* My_strndup (const char *str, const int len);
+
+int Factorial (int ord);
 
 #endif

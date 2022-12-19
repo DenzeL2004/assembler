@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <TXLib.h>
+
 
 
 #include "../src/Generals_func/generals.h"
@@ -21,7 +21,7 @@ static int Cpu_struct_ctor (Cpu_struct *cpu);
 
 static int Cpu_struct_dtor (Cpu_struct *cpu);
 
-static int Init_cpu        (Cpu_struct *cpu, int fdin);
+static int Init_cpu        (Cpu_struct *cpu, FILE *fpin);
 
 static int Comands_exe (Cpu_struct *cpu);
 
@@ -120,21 +120,17 @@ static int Cpu_struct_dtor (Cpu_struct *cpu)
 
 //======================================================================================
 
-static int Init_cpu (Cpu_struct *cpu, int fdin)
+static int Init_cpu (Cpu_struct *cpu, FILE *fpin)
 {
     assert (cpu != nullptr && "cpu is nullptr");
-    assert (fdin >= 0 && "file descriptor is negative number");
+    assert (fpin != nullptr && "fpin si nullptr");
 
-    struct stat file_stat = {};
-    if (fstat (fdin, &file_stat))
-    {
-        Log_report ("Unsuccessful memory extraction\n");
-        Err_report ();
+    fseek (fpin, 0, SEEK_END);
+    int file_size = ftell (fpin) + 1;
+    
+    rewind (fpin);
 
-        return READ_FROM_BIN_ERR;
-    }
-
-    unsigned char* buffer = (unsigned char*) calloc (file_stat.st_size, sizeof (unsigned char));
+    unsigned char* buffer = (unsigned char*) calloc (file_size, sizeof (unsigned char));
     if (Check_nullptr (buffer))
     {
         Log_report ("An error occurred while allocating memory for the buffer\n");
@@ -143,8 +139,12 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
         return ERR_MEMORY_ALLOC;
     }
 
-    int read_byte = read (fdin, buffer, file_stat.st_size);
+    int read_byte = fread (buffer, sizeof (unsigned char), file_size, fpin);
 
+    //for (int id = 0; id < file_stat.st_size; id++)
+      //  printf ("%d. %d\n", id, *(buffer + id));
+
+   // printf ("read = %d, byte = %d\n", read_byte, file_stat.st_size);
     if (read_byte <= 0)
     {
         Log_report ("function read outputs a negative number bin file\n"
@@ -154,7 +154,6 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
         return READ_FROM_BIN_ERR;
     }
 
-    
     if (Check_header (&buffer))
     {
         Log_report ("File headers did not match constants\n");
@@ -166,27 +165,7 @@ static int Init_cpu (Cpu_struct *cpu, int fdin)
     cpu->cnt_bytes = *(int*) buffer;
     buffer += sizeof (int);
 
-    cpu->code = (unsigned char*) calloc (cpu->cnt_bytes + 20, sizeof (unsigned char));
-    if (cpu->code == nullptr)
-    {
-        Log_report ("An error occurred while allocating memory for the code\n");
-        Err_report ();
-
-        return ERR_MEMORY_ALLOC;
-    }
-    
-    memcpy (cpu->code, buffer, cpu->cnt_bytes * sizeof (unsigned char));
-
-
-    if (cpu->code == nullptr)
-    {
-        Log_report ("Failed to copy from buffer to code\n");
-        Err_report ();
-
-        return ERR_MEMORY_ALLOC;
-    }
-
-    free (buffer - 3 * sizeof (int));
+    cpu->code = buffer;
 
     cpu->ram = (elem*) calloc (Ram_size, sizeof (elem));
     if (Check_nullptr (cpu->ram))
@@ -235,14 +214,14 @@ static int Check_header (unsigned char **buffer)
     return 0;
 }
 
-int Run_proc (int fdin)
+int Run_proc (FILE* fpin)
 {
-    assert (fdin >= 0 && "file descriptor is negative number");
+    assert (fpin != nullptr && "fpin is nullptr");
 
     Cpu_struct cpu = {};
     Cpu_struct_ctor (&cpu);
 
-    if (Init_cpu (&cpu, fdin))
+    if (Init_cpu (&cpu, fpin))
     {
         Log_report ("File initialization error\n");
         Err_report ();
@@ -259,6 +238,7 @@ int Run_proc (int fdin)
     }
 
 
+    cpu.code -= sizeof (int) * 3;
     if (Cpu_struct_dtor (&cpu))
     {
         Log_report ("File destructor ended with an error\n");
@@ -391,24 +371,24 @@ static int Show_ram (Cpu_struct *cpu)
 {
     assert (cpu != nullptr && "cpu is nullptr");
 
-    txCreateWindow (Window_height,  Window_width);
+    //txCreateWindow (Window_height,  Window_width);
 
     for (int ln = 0; ln < Ln_ram; ln++)
     {
         for (int cl = 0; cl < Cl_ram; cl++)
         {
-            int adress = ln * Cl_ram + cl;
+            int adress = ln * Cl_ram + cl + Offset;
 
             if (cpu->ram[adress])
             { 
                 Print_colour (GREEN, "* ");
-                txSetPixel (Window_height / 2 + cl,  Window_width / 2 + ln, TX_CYAN);
+      //          txSetPixel (Window_height / 2 + cl,  Window_width / 2 + ln, TX_CYAN);
             }
 
             else
             {
                 Print_colour (RED,   "* ");
-                txSetPixel (Window_height / 2 + cl, Window_width / 2 + ln, TX_RED);
+               // txSetPixel (Window_height / 2 + cl, Window_width / 2 + ln, TX_RED);
             }
             
         }

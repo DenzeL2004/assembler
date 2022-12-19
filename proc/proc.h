@@ -11,6 +11,8 @@ const int Cl_ram = 20;
 
 const int Ram_size = 400;
 
+const int Offset   = 100;
+
 const int Min_stack_size = 5;
 
 const int Program_delay = 300;
@@ -58,7 +60,7 @@ struct  Cpu_struct
 #define USE_CPU_REG_DUMP    //<- We write to the log file information by cpu regs
 
 
-int Run_proc (int fdin);
+int Run_proc (FILE* fpin);
 
 
 #endif //#endif _PROC_H_
