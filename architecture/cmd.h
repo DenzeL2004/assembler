@@ -106,6 +106,8 @@ DEF_CMD (OUT, 10, 0, {
     elem val = 0;
     GET_VAL_FROM_STACK (&val);
 
+    if (Is_zero (val)) val = 0;
+
     printf ("%.6" USE_TYPE "\n", val); 
 })
 
@@ -248,7 +250,7 @@ DEF_CMD (LT, 25, 0, {
 })
 
 
-DEF_CMD (NLT, 26, 0, {
+DEF_CMD (GEQ, 26, 0, {
 
     elem val1 = 0, val2 = 0;
     GET_VAL_FROM_STACK (&val1);
@@ -257,7 +259,7 @@ DEF_CMD (NLT, 26, 0, {
     SET_VAL_TO_STACK (((int)val1) <= ((int)val2));
 })
 
-DEF_CMD (NGT, 27, 0, {
+DEF_CMD (LEQ, 27, 0, {
 
     elem val1 = 0, val2 = 0;
     GET_VAL_FROM_STACK (&val1);

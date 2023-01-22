@@ -9,17 +9,13 @@ const int Ln_ram = 20;
 
 const int Cl_ram = 20;
 
-const int Ram_size = 400;
+const int Ram_size = 600;
 
-const int Offset   = 100;
+const int Offset   = 150;
 
 const int Min_stack_size = 5;
 
 const int Program_delay = 300;
-
-const int Window_height = 400;
-
-const int Window_width  = 100;
 
 enum Processor_err
 {

@@ -371,8 +371,6 @@ static int Show_ram (Cpu_struct *cpu)
 {
     assert (cpu != nullptr && "cpu is nullptr");
 
-    //txCreateWindow (Window_height,  Window_width);
-
     for (int ln = 0; ln < Ln_ram; ln++)
     {
         for (int cl = 0; cl < Cl_ram; cl++)
@@ -382,13 +380,11 @@ static int Show_ram (Cpu_struct *cpu)
             if (cpu->ram[adress])
             { 
                 Print_colour (GREEN, "* ");
-      //          txSetPixel (Window_height / 2 + cl,  Window_width / 2 + ln, TX_CYAN);
             }
 
             else
             {
                 Print_colour (RED,   "* ");
-               // txSetPixel (Window_height / 2 + cl, Window_width / 2 + ln, TX_RED);
             }
             
         }

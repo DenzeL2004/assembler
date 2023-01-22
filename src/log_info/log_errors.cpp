@@ -3,7 +3,7 @@
 #include <stdarg.h>
 
 #include "log_errors.h"
-#include "..\Generals_func\generals.h"
+#include "../Generals_func/generals.h"
 
 static FILE *fp_logs = stderr;
 
@@ -41,7 +41,7 @@ int Log_report_ (const char* file_name, const char* func_name, int line, const c
     fprintf (fp_logs, "In function %s\n", func_name);
     fprintf (fp_logs, "In line %d\n\n", line);
     
-    va_list args = nullptr;
+    va_list args = {};
    
     va_start(args, format);
     vfprintf(fp_logs, format, args);

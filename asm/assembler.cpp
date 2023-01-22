@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -14,7 +13,6 @@
 #include "../src/log_info/log_errors.h"
 
 #include "assembler.h"
-
 
 static int Asm_struct_ctor (Asm_struct *asmst, int code_size);
 
@@ -187,8 +185,6 @@ int Convert_operations (int fdin, const char *output_file)
         return CONVERT_COMMAND_ERR;
     }
 
-    for (int i = 0; i < asmst.cnt_bytes; i++)
-       printf ("%d: %d\n", i, *(asmst.code + i));
 
     if (Write_convert_file (&asmst, output_file))
     {
@@ -272,8 +268,8 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
     {
         char    *cur_line      = commands_line->lines[ip_line].str;
         int      cur_len       = commands_line->lines[ip_line].len_str;
-
-        if (cur_len == 0 || cur_line[0] == '\t')
+    
+        if (cur_len == 0 || cur_line[0] == '\n')
         {
             ip_line++;
             continue;
@@ -284,8 +280,6 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
             ip_line++;
             continue;
         }
-
-        printf ("lex %s\n", cur_line);
 
         int64_t cur_line_hash = Get_str_hash (cur_line);
 
@@ -316,8 +310,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
                     }
 
                 Label_init (asmst->label_table.labels + asmst->label_table.cnt_labels, 
-                             asmst->code - ptr_beg_code, name_label, asmst->cur_bypass);
-
+                            asmst->code - ptr_beg_code, name_label, asmst->cur_bypass);
                 asmst->label_table.cnt_labels++;
             }
 
@@ -342,7 +335,7 @@ static int Get_convert_commands (Text_info *commands_line, Asm_struct *asmst)
         
         /*else*/
         {
-            Log_report ("Unknown program entered: %s\n", cur_line);
+            Log_report ("Unknown program entered: |%s|\n", cur_line);
             Err_report ();
 
             return UNKNOWN_COM_ERR;
@@ -480,9 +473,8 @@ static int Def_jump_argument (Asm_struct *asmst, char *name_label)
         Err_report ();                                                                                                                                       
         return CONVERT_COMMAND_ERR;                                                             
     }                                                                                           
-                                                                                                
-    int ip_jump = Find_label (&asmst->label_table, name_label);                                 
-                                                                                                
+                                                                  
+    int ip_jump = Find_label (&asmst->label_table, name_label);                                                                                                                                
     if (ip_jump == Not_init_label && asmst->cur_bypass == SECOND)                                      
     {                                                                                           
         Log_report ("Undefined label: %s\n", name_label);                                                       

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 
 #include "assembler.h"
 #include "../src/Generals_func/generals.h"

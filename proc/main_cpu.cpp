@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string>
-#include <windows.h>
 
 #include "proc.h"
 #include "../src/Generals_func/generals.h"
@@ -33,7 +32,7 @@ int main (int argc, char *argv[])
     }
 
 
-    system(("chcp " + std::to_string(CP_UTF8)).c_str());
+    printf ("\b\r");
 
     FILE *fpin = Open_file_ptr (Input_file, "rb");
     if (Check_nullptr (fpin))

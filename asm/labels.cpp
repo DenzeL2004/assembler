@@ -14,9 +14,8 @@
 int Label_init (Label *label, const int ip_cmd, const char *name, const int bypass) 
 {
     assert (label != nullptr && "pointer to nullptr label");
-
-    label->string_hash = Get_str_hash (name);
     
+    label->string_hash = Get_str_hash (name);
     label->ptr_jump = ip_cmd;
 
     label->bypass = bypass;
@@ -52,9 +51,18 @@ int Recalloc_cnt_labels (Label_table *label_table)
 {
     assert (label_table != nullptr && "label_tablel is nullptr");
     
-    label_table->label_capacity += Additional_labels;
+    int new_capacity = label_table->label_capacity + Additional_labels;
 
-    realloc (label_table->labels, label_table->label_capacity * sizeof (Label));
+    label_table->labels = (Label*) realloc (label_table->labels, new_capacity * sizeof (Label));
+
+    for (int id = label_table->label_capacity; id < new_capacity; id++)
+    {
+        (label_table->labels + id)->string_hash = 0;
+        (label_table->labels + id)->ptr_jump    = 0;
+        (label_table->labels + id)->bypass      = 0;
+    }
+
+    label_table->label_capacity = new_capacity;
 
     if (Check_nullptr (label_table->labels))
     { 

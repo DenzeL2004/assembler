@@ -1,4 +1,4 @@
-all: mkdirectory mkdirectorybin
+all: mkdirectory mkdirectorybin asm proc 
 
 FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equal -Winline -Wunreachable-code -Wmissing-declarations 		\
 		-Wmissing-include-dirs -Wswitch-enum -Wswitch-default -Weffc++ -Wmain -Wextra -Wall -g -pipe -fexceptions -Wcast-qual -Wconversion	\
@@ -7,7 +7,7 @@ FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equa
 		-Wtype-limits -Wwrite-strings -D_DEBUG -D_EJUDGE_CLIENT_SIDE
 
 proc:  obj/main_cpu.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/proc.o obj/labels.o
-	g++ obj/main_cpu.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/proc.o obj/labels.o -o proc
+	g++ obj/main_cpu.o obj/stack.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/proc.o obj/labels.o -o ../proc_run
 
 
 obj/main_cpu.o: proc/main_cpu.cpp proc/proc.h architecture/architecture.h
@@ -20,7 +20,7 @@ obj/proc.o: proc/proc.cpp proc/proc.h architecture/architecture.h architecture/c
 
 
 asm: obj/main_asm.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/labels.o
-	g++ obj/main_asm.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/labels.o -o assembler
+	g++ obj/main_asm.o obj/generals.o obj/log_errors.o obj/assembler.o obj/process_text.o obj/labels.o -o ../assembler_run
 
 
 obj/main_asm.o: asm/main_asm.cpp asm/assembler.h architecture/architecture.h
@@ -35,17 +35,17 @@ obj/labels.o: asm/labels.cpp asm/labels.h architecture/architecture.h
 
 
 
-obj/process_text.o: src\process_text\process_text.cpp src\process_text\process_text.h
-	g++ src\process_text\process_text.cpp -c -o obj/process_text.o $(FLAGS)
+obj/process_text.o: src/process_text/process_text.cpp src/process_text/process_text.h
+	g++ src/process_text/process_text.cpp -c -o obj/process_text.o $(FLAGS)
 
 obj/log_errors.o: src/log_info/log_errors.h src/log_info/log_errors.cpp
-	g++ src\log_info\log_errors.cpp -c -o obj/log_errors.o $(FLAGS)
+	g++ src/log_info/log_errors.cpp -c -o obj/log_errors.o $(FLAGS)
 
-obj/stack.o: src\stack\stack.cpp src\stack\stack.h src\stack\config.h
-	g++  src\stack\stack.cpp -c -o obj/stack.o $(FLAGS)
+obj/stack.o: src/stack/stack.cpp src/stack/stack.h src/stack/config.h
+	g++  src/stack/stack.cpp -c -o obj/stack.o $(FLAGS)
 
-obj/generals.o: src\Generals_func\generals.cpp
-	g++ src\Generals_func\generals.cpp -c -o obj/generals.o $(FLAGS)
+obj/generals.o: src/Generals_func/generals.cpp
+	g++ src/Generals_func/generals.cpp -c -o obj/generals.o $(FLAGS)
 
 
 .PHONY: cleanup mkdirectory
@@ -54,7 +54,7 @@ mkdirectory:
 	mkdir -p obj;
 
 mkdirectorybin:
-	mkdir -p bin
+	mkdir -p bin;
 
 cleanup:
 	rm obj/*.o

@@ -1,6 +1,5 @@
-*.exe
+assembler_run
+logs_info.txt
 *.o
+proc_run
 *.bin
-/.vscode
-*.txt
-/.txt
