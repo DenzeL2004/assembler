@@ -238,7 +238,7 @@ DEF_CMD (GT, 24, 0, {
     GET_VAL_FROM_STACK (&val1);
     GET_VAL_FROM_STACK (&val2);
 
-    SET_VAL_TO_STACK (((int)val1) < ((int)val2));
+    SET_VAL_TO_STACK (!Equality_double(val1, val2) && val1 < val2);
 })
 
 DEF_CMD (LT, 25, 0, {
@@ -246,7 +246,7 @@ DEF_CMD (LT, 25, 0, {
     GET_VAL_FROM_STACK (&val1);
     GET_VAL_FROM_STACK (&val2);
 
-    SET_VAL_TO_STACK (((int)val1) > ((int)val2));
+    SET_VAL_TO_STACK (!Equality_double(val1, val2) && val1 > val2);
 })
 
 
@@ -256,7 +256,7 @@ DEF_CMD (GEQ, 26, 0, {
     GET_VAL_FROM_STACK (&val1);
     GET_VAL_FROM_STACK (&val2);
 
-    SET_VAL_TO_STACK (((int)val1) <= ((int)val2));
+    SET_VAL_TO_STACK (Equality_double(val1, val2) || val1 < val2);
 })
 
 DEF_CMD (LEQ, 27, 0, {
@@ -265,7 +265,7 @@ DEF_CMD (LEQ, 27, 0, {
     GET_VAL_FROM_STACK (&val1);
     GET_VAL_FROM_STACK (&val2);
 
-    SET_VAL_TO_STACK (((int)val1) >= ((int)val2));
+    SET_VAL_TO_STACK (Equality_double(val1, val2) || val1 > val2);
 })
 
 DEF_CMD (EQ, 28, 0, {
@@ -274,7 +274,7 @@ DEF_CMD (EQ, 28, 0, {
     GET_VAL_FROM_STACK (&val1);
     GET_VAL_FROM_STACK (&val2);
 
-    SET_VAL_TO_STACK (((int)val1) == ((int)val2));
+    SET_VAL_TO_STACK (Equality_double(val1, val2));
 })
 
 DEF_CMD (NEQ, 29, 0, {
@@ -283,7 +283,7 @@ DEF_CMD (NEQ, 29, 0, {
     GET_VAL_FROM_STACK (&val1);
     GET_VAL_FROM_STACK (&val2);
 
-    SET_VAL_TO_STACK (((int)val1) != ((int)val2));
+    SET_VAL_TO_STACK (!Equality_double(val1, val2));
 })
 
 DEF_CMD (NEG, 30, 0, {
