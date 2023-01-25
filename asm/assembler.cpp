@@ -406,6 +406,12 @@ static int Def_args
             arg_reg = (unsigned char) (cur_lex[1] - 'a');
             cmd |= ARG_REG;
         }
+
+        else if (!strcmp (cur_lex, "rbp"))
+        {
+            arg_reg = (unsigned char) RBP;
+            cmd |= ARG_REG;
+        }
         
         else 
         {

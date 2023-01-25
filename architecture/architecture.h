@@ -9,7 +9,7 @@ static const int Ver = 1;
 
 static const int Sig = 'D' * 256 + 'K';
 
-const int Cnt_reg = 16;
+const int Cnt_reg = 17;
 
 const int Max_cnt_cmd = (1 << 5);
 
